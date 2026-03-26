@@ -1,91 +1,75 @@
 'use client'
 
-import { useState } from 'react'
-import { Search, FileText, MoreVertical } from 'lucide-react'
-
-const mockDocuments = [
-  {
-    id: '1',
-    filename: 'Paragon_TESCO.pdf',
-    date: '2026-03-25',
-    amount: 125.50,
-    status: 'assigned',
-    vendor: 'TESCO',
-  },
-  {
-    id: '2',
-    filename: 'Rachunek_Paliwo.jpg',
-    date: '2026-03-24',
-    amount: 85.00,
-    status: 'assigned',
-    vendor: 'ORLEN',
-  },
-  {
-    id: '3',
-    filename: 'Faktura_Czynsz.pdf',
-    date: '2026-03-20',
-    amount: 1500.00,
-    status: 'assigned',
-    vendor: 'Zarządzająca',
-  },
-  {
-    id: '4',
-    filename: 'Paragon_Apteka.jpg',
-    date: '2026-03-18',
-    amount: 45.99,
-    status: 'pending',
-    vendor: 'Apteka Centralna',
-  },
-  {
-    id: '5',
-    filename: 'Rachunek_Prąd.pdf',
-    date: '2026-03-15',
-    amount: 245.00,
-    status: 'pending',
-    vendor: 'EnergiaSC',
-  },
-  {
-    id: '6',
-    filename: 'Paragon_Kino.jpg',
-    date: '2026-03-12',
-    amount: 68.00,
-    status: 'assigned',
-    vendor: 'Kino Multikino',
-  },
-]
+import { useState, useEffect } from 'react'
+import { Search, FileText, Trash2, Loader2 } from 'lucide-react'
+import { getDocuments, deleteDocument } from '@/lib/actions/documents'
+import type { Document } from '@/types/budget'
 
 export default function DocumentsPage() {
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [documents, setDocuments] = useState<Document[]>([])
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'assigned' | 'pending'>(
-    'all'
-  )
+  const [statusFilter, setStatusFilter] = useState<'all' | 'processed' | 'pending' | 'error'>('all')
 
-  const filteredDocuments = mockDocuments.filter((doc) => {
+  const loadDocuments = async () => {
+    try {
+      setError(null)
+      const docs = await getDocuments()
+      setDocuments(docs)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'B\u0142\u0105d \u0142adowania dokument\u00f3w')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadDocuments()
+  }, [])
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteDocument(id)
+      await loadDocuments()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'B\u0142\u0105d usuwania dokumentu')
+    }
+  }
+
+  const filteredDocuments = documents.filter((doc) => {
     const matchesSearch =
-      doc.filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.vendor.toLowerCase().includes(searchQuery.toLowerCase())
+      (doc.ocr_vendor_name || doc.file_path || '').toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus =
       statusFilter === 'all' || doc.status === statusFilter
     return matchesSearch && matchesStatus
   })
 
-  const totalAmount = filteredDocuments.reduce((sum, doc) => sum + doc.amount, 0)
-  const assignedCount = filteredDocuments.filter(
-    (d) => d.status === 'assigned'
-  ).length
-  const pendingCount = filteredDocuments.filter(
-    (d) => d.status === 'pending'
-  ).length
+  const totalAmount = filteredDocuments.reduce((sum, doc) => sum + (doc.ocr_total || 0), 0)
+  const processedCount = documents.filter(d => d.status === 'processed').length
+  const pendingCount = documents.filter(d => d.status === 'pending').length
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 text-[#6c5ce7] animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-[#ededed] mb-2">Dokumenty</h1>
-        <p className="text-[#999]">
-          Archiwum skanowanych paragonów i faktur
-        </p>
+        <p className="text-[#999]">Archiwum skanowanych paragon\u00f3w i faktur</p>
       </div>
+
+      {error && (
+        <div className="p-3 bg-[#e17055]/10 border border-[#e17055]/30 rounded-lg text-[#ff7675] text-sm">
+          {error}
+        </div>
+      )}
 
       {/* Search and Filters */}
       <div className="space-y-4">
@@ -100,23 +84,10 @@ export default function DocumentsPage() {
           />
         </div>
 
-        {/* Filter Chips */}
         <div className="flex flex-wrap gap-2">
-          <FilterChip
-            label="Wszystkie"
-            active={statusFilter === 'all'}
-            onClick={() => setStatusFilter('all')}
-          />
-          <FilterChip
-            label={`Przypisane (${assignedCount})`}
-            active={statusFilter === 'assigned'}
-            onClick={() => setStatusFilter('assigned')}
-          />
-          <FilterChip
-            label={`Do przypisania (${pendingCount})`}
-            active={statusFilter === 'pending'}
-            onClick={() => setStatusFilter('pending')}
-          />
+          <FilterChip label="Wszystkie" active={statusFilter === 'all'} onClick={() => setStatusFilter('all')} />
+          <FilterChip label={`Przetworzone (${processedCount})`} active={statusFilter === 'processed'} onClick={() => setStatusFilter('processed')} />
+          <FilterChip label={`Oczekuj\u0105ce (${pendingCount})`} active={statusFilter === 'pending'} onClick={() => setStatusFilter('pending')} />
         </div>
       </div>
 
@@ -124,46 +95,36 @@ export default function DocumentsPage() {
       <div className="bg-[#141418] rounded-lg border border-[#2a2a35] p-4">
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <p className="text-xs font-medium text-[#666] uppercase">
-              Dokumentów
-            </p>
-            <p className="text-2xl font-bold text-[#ededed]">
-              {filteredDocuments.length}
-            </p>
+            <p className="text-xs font-medium text-[#666] uppercase">Dokument\u00f3w</p>
+            <p className="text-2xl font-bold text-[#ededed]">{filteredDocuments.length}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-[#666] uppercase">
-              Łączna kwota
-            </p>
+            <p className="text-xs font-medium text-[#666] uppercase">\u0141\u0105czna kwota</p>
             <p className="text-2xl font-bold text-[#a29bfe]">
-              {totalAmount.toFixed(2)} zł
+              {totalAmount.toLocaleString('pl-PL', { minimumFractionDigits: 2 })} z\u0142
             </p>
           </div>
           <div>
-            <p className="text-xs font-medium text-[#666] uppercase">
-              Średnia
-            </p>
+            <p className="text-xs font-medium text-[#666] uppercase">\u015arednia</p>
             <p className="text-2xl font-bold text-[#74b9ff]">
-              {(totalAmount / (filteredDocuments.length || 1)).toFixed(2)} zł
+              {(totalAmount / (filteredDocuments.length || 1)).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} z\u0142
             </p>
           </div>
         </div>
       </div>
 
       {/* Documents Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredDocuments.map((doc) => (
-          <DocumentCard key={doc.id} document={doc} />
-        ))}
-      </div>
-
-      {filteredDocuments.length === 0 && (
+      {filteredDocuments.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredDocuments.map((doc) => (
+            <DocumentCard key={doc.id} document={doc} onDelete={handleDelete} />
+          ))}
+        </div>
+      ) : (
         <div className="text-center py-12">
           <FileText className="w-16 h-16 text-[#2a2a35] mx-auto mb-4" />
-          <p className="text-[#666] mb-2">Brak dokumentów</p>
-          <p className="text-[#999] text-sm">
-            Skanuj paragon, aby dodać nowy dokument
-          </p>
+          <p className="text-[#666] mb-2">Brak dokument\u00f3w</p>
+          <p className="text-[#999] text-sm">Skanuj paragon, aby doda\u0107 nowy dokument</p>
         </div>
       )}
     </div>
@@ -194,25 +155,27 @@ function FilterChip({
 }
 
 function DocumentCard({
-  document,
+  document: doc,
+  onDelete,
 }: {
-  document: {
-    id: string
-    filename: string
-    date: string
-    amount: number
-    status: string
-    vendor: string
-  }
+  document: Document
+  onDelete: (id: string) => void
 }) {
-  const statusLabel = document.status === 'assigned' ? 'Przypisany' : 'Do przypisania'
-  const statusColor =
-    document.status === 'assigned' ? 'bg-[#00b894]' : 'bg-[#fdcb6e]'
+  const statusLabels: Record<string, string> = {
+    processed: 'Przetworzony',
+    pending: 'Oczekuje',
+    error: 'B\u0142\u0105d',
+  }
+  const statusColors: Record<string, string> = {
+    processed: 'bg-[#00b894]',
+    pending: 'bg-[#fdcb6e]',
+    error: 'bg-[#e17055]',
+  }
 
   return (
     <div className="bg-[#141418] rounded-lg border border-[#2a2a35] overflow-hidden hover:border-[#6c5ce7] transition">
       {/* Preview */}
-      <div className="aspect-square bg-gradient-to-br from-[#6c5ce7] to-[#a29bfe] flex items-center justify-center">
+      <div className="aspect-video bg-gradient-to-br from-[#6c5ce7] to-[#a29bfe] flex items-center justify-center">
         <FileText className="w-12 h-12 text-white opacity-50" />
       </div>
 
@@ -220,28 +183,37 @@ function DocumentCard({
       <div className="p-4 space-y-3">
         <div className="flex items-start justify-between gap-2">
           <h3 className="text-sm font-semibold text-[#ededed] truncate">
-            {document.vendor}
+            {doc.ocr_vendor_name || 'Nieznany sprzedawca'}
           </h3>
-          <button className="p-1 hover:bg-[#1e1e24] rounded transition">
-            <MoreVertical className="w-4 h-4 text-[#666]" />
+          <button
+            onClick={() => onDelete(doc.id)}
+            className="p-1 hover:bg-[#2a2a35] rounded transition"
+          >
+            <Trash2 className="w-4 h-4 text-[#e17055]" />
           </button>
         </div>
 
-        <p className="text-xs text-[#666] truncate">{document.filename}</p>
+        <p className="text-xs text-[#666] truncate">{doc.file_type} &bull; {doc.file_path.split('/').pop()}</p>
+
+        {doc.ocr_nip && (
+          <p className="text-xs text-[#666]">NIP: {doc.ocr_nip}</p>
+        )}
 
         <div className="flex items-center justify-between pt-2 border-t border-[#2a2a35]">
           <div>
             <p className="text-xs text-[#666] mb-1">
-              {new Date(document.date).toLocaleDateString('pl-PL')}
+              {doc.ocr_date
+                ? new Date(doc.ocr_date).toLocaleDateString('pl-PL')
+                : new Date(doc.uploaded_at).toLocaleDateString('pl-PL')}
             </p>
-            <p className="text-lg font-bold text-[#a29bfe]">
-              {document.amount.toFixed(2)} zł
-            </p>
+            {doc.ocr_total != null && (
+              <p className="text-lg font-bold text-[#a29bfe]">
+                {Number(doc.ocr_total).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} z\u0142
+              </p>
+            )}
           </div>
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-semibold text-white ${statusColor}`}
-          >
-            {statusLabel}
+          <span className={`px-2 py-1 rounded-full text-xs font-semibold text-white ${statusColors[doc.status] || 'bg-[#666]'}`}>
+            {statusLabels[doc.status] || doc.status}
           </span>
         </div>
       </div>

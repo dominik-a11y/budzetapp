@@ -1,2 +1,3 @@
-// This file intentionally left as placeholder
-export { default } from '../login/layout'
+// Deprecated: auth layout no longer needed
+const placeholder = null
+export { placeholder }

@@ -1,3 +1,3 @@
-// This file intentionally left as placeholder
-// Real register page is at /app/register/page.tsx
-export { default } from '../../register/page'
+// Deprecated: register page moved to /app/register/page.tsx
+const placeholder = null
+export { placeholder }

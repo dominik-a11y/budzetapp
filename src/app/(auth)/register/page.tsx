@@ -1,3 +1,2 @@
-// Deprecated: register page moved to /app/register/page.tsx
-const placeholder = null
-export { placeholder }
+// This route group has been replaced by /register
+export {};

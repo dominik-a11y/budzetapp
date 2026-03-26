@@ -1,2 +1,2 @@
-import { redirect } from 'next/navigation'
-export default function Page() { redirect('/dashboard/accounts') }
+// This route group has been replaced by /dashboard/accounts
+export {};

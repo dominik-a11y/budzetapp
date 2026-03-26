@@ -1,1 +1,2 @@
-export default function Layout({ children }: { children: React.ReactNode }) { return <>{children}</> }
+// This route group has been replaced by /dashboard
+export {};

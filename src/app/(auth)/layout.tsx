@@ -1,3 +1,2 @@
-// Deprecated: auth layout no longer needed
-const placeholder = null
-export { placeholder }
+// This route group has been replaced by /login and /register
+export {};

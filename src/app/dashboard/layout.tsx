@@ -46,13 +46,13 @@ export default function DashboardLayout({
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/month', label: 'Miesiąc', icon: Calendar },
-    { href: '/year/2026', label: 'Rok', icon: BarChart3 },
-    { href: '/accounts', label: 'Konta', icon: Wallet },
-    { href: '/documents', label: 'Dokumenty', icon: FileText },
-    { href: '/scan', label: 'Skanuj', icon: Camera },
-    { href: '/categories', label: 'Kategorie', icon: Tags },
-    { href: '/settings', label: 'Ustawienia', icon: Settings },
+    { href: '/dashboard/month', label: 'Miesiąc', icon: Calendar },
+    { href: '/dashboard/year/2026', label: 'Rok', icon: BarChart3 },
+    { href: '/dashboard/accounts', label: 'Konta', icon: Wallet },
+    { href: '/dashboard/documents', label: 'Dokumenty', icon: FileText },
+    { href: '/dashboard/scan', label: 'Skanuj', icon: Camera },
+    { href: '/dashboard/categories', label: 'Kategorie', icon: Tags },
+    { href: '/dashboard/settings', label: 'Ustawienia', icon: Settings },
   ]
 
   return (

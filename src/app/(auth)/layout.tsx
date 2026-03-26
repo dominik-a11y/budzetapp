@@ -1,1 +1,2 @@
-export default function Layout({ children }: { children: React.ReactNode }) { return <>{children}</> }
+// This file intentionally left as placeholder
+export { default } from '../login/layout'

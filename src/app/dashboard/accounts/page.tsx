@@ -1,61 +1,84 @@
 'use client'
 
-import { useState } from 'react'
-import {
-  Wallet,
-  TrendingUp,
-  Plus,
-  MoreVertical,
-  ArrowUpRight,
-  ArrowDownLeft,
-} from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { useState, useEffect, useCallback } from 'react'
+import { Wallet, Plus, Loader2, X, Trash2 } from 'lucide-react'
+import { getAccounts, createAccount, deleteAccount } from '@/lib/actions/accounts'
+import type { Account, AccountType } from '@/types/budget'
 
-const mockAccounts = [
-  {
-    id: '1',
-    name: 'Moje konto główne',
-    type: 'checking',
-    balance: 4250.75,
-    currency: 'PLN',
-  },
-  {
-    id: '2',
-    name: 'Oszczędności',
-    type: 'savings',
-    balance: 12500.00,
-    currency: 'PLN',
-  },
-  {
-    id: '3',
-    name: 'Karta kredytowa',
-    type: 'credit_card',
-    balance: -850.50,
-    currency: 'PLN',
-  },
-  {
-    id: '4',
-    name: 'Gotówka',
-    type: 'cash',
-    balance: 450.00,
-    currency: 'PLN',
-  },
-]
+const ACCOUNT_TYPE_LABELS: Record<string, string> = {
+  checking: 'Konto bieżące',
+  savings: 'Konto oszczędnościowe',
+  investment: 'Inwestycje',
+  cash: 'Gotówka',
+}
 
-const monthlyWealthData = [
-  { month: 'Styczeń', total: 14500 },
-  { month: 'Luty', total: 15200 },
-  { month: 'Marzec', total: 15800 },
-  { month: 'Kwiecień', total: 16500 },
-  { month: 'Maj', total: 17200 },
-  { month: 'Czerwiec', total: 17350.25 },
-]
+const ACCOUNT_TYPE_ICONS: Record<string, string> = {
+  checking: '🏦',
+  savings: '🏪',
+  investment: '📈',
+  cash: '💵',
+}
 
 export default function AccountsPage() {
-  const totalWealth = mockAccounts.reduce((sum, acc) => sum + acc.balance, 0)
-  const previousMonth = 15350.25
-  const change = totalWealth - previousMonth
-  const changePercent = ((change / previousMonth) * 100).toFixed(2)
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [showAdd, setShowAdd] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newType, setNewType] = useState<AccountType>('checking')
+  const [saving, setSaving] = useState(false)
+
+  const loadAccounts = useCallback(async () => {
+    try {
+      setError(null)
+      const data = await getAccounts()
+      setAccounts(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Błąd ładowania kont')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadAccounts()
+  }, [loadAccounts])
+
+  const handleCreate = async () => {
+    if (!newName.trim()) return
+    setSaving(true)
+    try {
+      await createAccount({ name: newName.trim(), account_type: newType })
+      setNewName('')
+      setNewType('checking')
+      setShowAdd(false)
+      await loadAccounts()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Błąd tworzenia konta')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    setSaving(true)
+    try {
+      await deleteAccount(id)
+      await loadAccounts()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Błąd usuwania konta')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 text-[#6c5ce7] animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
@@ -63,133 +86,105 @@ export default function AccountsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-[#ededed]">Konta</h1>
-          <p className="text-[#999] mt-1">Zarządzaj swoimi kontami i portfelem</p>
+          <p className="text-[#999] mt-1">Zarządzaj swoimi kontami</p>
         </div>
-        <button className="flex items-center space-x-2 bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] hover:from-[#5a4bc4] hover:to-[#9189d8] text-white font-semibold px-4 py-2.5 rounded-lg transition">
+        <button
+          onClick={() => setShowAdd(true)}
+          className="flex items-center space-x-2 bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] hover:from-[#5a4bc4] hover:to-[#9189d8] text-white font-semibold px-4 py-2.5 rounded-lg transition"
+        >
           <Plus className="w-5 h-5" />
           <span>Dodaj konto</span>
         </button>
       </div>
 
-      {/* Total Wealth Card */}
-      <div className="bg-gradient-to-br from-[#6c5ce7] to-[#a29bfe] rounded-lg p-8 text-white">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <p className="text-sm opacity-90 mb-1">Całkowity majątek</p>
-            <h2 className="text-4xl font-bold">
-              {totalWealth.toLocaleString('pl-PL', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}{' '}
-              zł
-            </h2>
-          </div>
-          <Wallet className="w-12 h-12 opacity-50" />
+      {error && (
+        <div className="p-3 bg-[#e17055]/10 border border-[#e17055]/30 rounded-lg text-[#ff7675] text-sm">
+          {error}
         </div>
-        <div className="flex items-center space-x-2">
-          {change >= 0 ? (
-            <>
-              <ArrowUpRight className="w-5 h-5 text-green-400" />
-              <span>+{change.toFixed(2)} zł ({changePercent}%) od marzca</span>
-            </>
-          ) : (
-            <>
-              <ArrowDownLeft className="w-5 h-5 text-red-400" />
-              <span>{change.toFixed(2)} zł ({changePercent}%) od marzca</span>
-            </>
-          )}
-        </div>
-      </div>
+      )}
 
-      {/* Wealth Growth Chart */}
-      <div className="bg-[#141418] rounded-lg border border-[#2a2a35] p-6">
-        <h3 className="text-lg font-semibold text-[#ededed] mb-6">
-          Wzrost majątku
-        </h3>
-        <div className="w-full h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={monthlyWealthData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a2a35" />
-              <XAxis dataKey="month" stroke="#666" style={{ fontSize: '12px' }} />
-              <YAxis stroke="#666" style={{ fontSize: '12px' }} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#1e1e24',
-                  border: '1px solid #2a2a35',
-                  borderRadius: '8px',
-                  color: '#ededed',
-                }}
+      {/* Add Account Form */}
+      {showAdd && (
+        <div className="bg-[#141418] rounded-lg border border-[#6c5ce7] p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-[#ededed]">Nowe konto</h3>
+            <button onClick={() => setShowAdd(false)} className="p-2 hover:bg-[#2a2a35] rounded-lg">
+              <X className="w-5 h-5 text-[#666]" />
+            </button>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-[#ededed] mb-2">Nazwa</label>
+              <input
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+                placeholder="np. Moje konto główne"
+                className="w-full px-4 py-2.5 bg-[#1e1e24] border border-[#2a2a35] rounded-lg text-[#ededed] placeholder-[#666] focus:outline-none focus:border-[#6c5ce7]"
+                autoFocus
               />
-              <Bar dataKey="total" fill="#6c5ce7" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Accounts Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {mockAccounts.map((account) => (
-          <AccountCard key={account.id} account={account} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function AccountCard({
-  account,
-}: {
-  account: {
-    id: string
-    name: string
-    type: string
-    balance: number
-    currency: string
-  }
-}) {
-  const getAccountIcon = (type: string) => {
-    switch (type) {
-      case 'checking':
-        return '🏦'
-      case 'savings':
-        return '🏪'
-      case 'credit_card':
-        return '💳'
-      case 'cash':
-        return '💵'
-      default:
-        return '💰'
-    }
-  }
-
-  const isNegative = account.balance < 0
-  const balanceColor = isNegative ? 'text-[#e17055]' : 'text-[#00b894]'
-
-  return (
-    <div className="bg-[#141418] rounded-lg border border-[#2a2a35] p-6 hover:border-[#6c5ce7] transition">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <div className="text-3xl">{getAccountIcon(account.type)}</div>
-          <div>
-            <h3 className="font-semibold text-[#ededed]">{account.name}</h3>
-            <p className="text-xs text-[#666] capitalize">{account.type}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#ededed] mb-2">Typ</label>
+              <select
+                value={newType}
+                onChange={(e) => setNewType(e.target.value as AccountType)}
+                className="w-full px-4 py-2.5 bg-[#1e1e24] border border-[#2a2a35] rounded-lg text-[#ededed] focus:outline-none focus:border-[#6c5ce7]"
+              >
+                {Object.entries(ACCOUNT_TYPE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={handleCreate}
+              disabled={saving || !newName.trim()}
+              className="w-full py-2.5 bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] text-white font-semibold rounded-lg transition disabled:opacity-50"
+            >
+              {saving ? 'Tworzenie...' : 'Utwórz konto'}
+            </button>
           </div>
         </div>
-        <button className="p-2 hover:bg-[#1e1e24] rounded-lg transition">
-          <MoreVertical className="w-5 h-5 text-[#666]" />
-        </button>
-      </div>
+      )}
 
-      <div className="pt-4 border-t border-[#2a2a35]">
-        <p className="text-xs text-[#666] mb-1">Saldo</p>
-        <p className={`text-2xl font-bold ${balanceColor}`}>
-          {account.balance.toLocaleString('pl-PL', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}{' '}
-          {account.currency}
-        </p>
-      </div>
+      {/* Accounts */}
+      {accounts.length === 0 && !showAdd ? (
+        <div className="bg-[#141418] rounded-lg border border-[#2a2a35] p-8 text-center">
+          <Wallet className="w-12 h-12 text-[#666] mx-auto mb-4" />
+          <p className="text-[#999] mb-2">Brak kont</p>
+          <p className="text-[#666] text-sm">Dodaj swoje pierwsze konto, aby śledzić finanse.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {accounts.map((account) => (
+            <div
+              key={account.id}
+              className="bg-[#141418] rounded-lg border border-[#2a2a35] p-6 hover:border-[#6c5ce7] transition group"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="text-3xl">
+                    {ACCOUNT_TYPE_ICONS[account.account_type] || '💰'}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-[#ededed]">{account.name}</h3>
+                    <p className="text-xs text-[#666]">
+                      {ACCOUNT_TYPE_LABELS[account.account_type] || account.account_type}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDelete(account.id)}
+                  className="p-2 hover:bg-[#2a2a35] rounded-lg transition opacity-0 group-hover:opacity-100"
+                >
+                  <Trash2 className="w-4 h-4 text-[#e17055]" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

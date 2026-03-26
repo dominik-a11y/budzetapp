@@ -1,14 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { TrendingUp, TrendingDown, DollarSign, Loader2, PiggyBank } from 'lucide-react'
+import Link from 'next/link'
+import { TrendingUp, TrendingDown, DollarSign, Loader2, PiggyBank, Plus, Camera, Calendar, ArrowRight } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { getOrCreateBudget } from '@/lib/actions/budgets'
 import { getMonthSummary, getCategoryTotals, getTransactions } from '@/lib/actions/transactions'
 import { getPlannedAmounts } from '@/lib/actions/budgets'
 import { getCategories } from '@/lib/actions/categories'
 import { getSettings } from '@/lib/actions/settings'
-import type { CategoryWithChildren, Transaction } from '@/types/budget'
+import type { Transaction } from '@/types/budget'
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
@@ -16,6 +17,9 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState({ total_income: 0, total_expenses: 0, total_savings: 0, remaining: 0 })
   const [categoryProgress, setCategoryProgress] = useState<{ name: string; planned: number; actual: number; percentage: number }[]>([])
   const [dailyTrend, setDailyTrend] = useState<{ day: string; amount: number }[]>([])
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([])
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1)
 
   useEffect(() => {
     async function load() {
@@ -24,6 +28,8 @@ export default function DashboardPage() {
         const now = new Date()
         const year = settings?.current_year || now.getFullYear()
         const month = now.getMonth() + 1
+        setCurrentYear(year)
+        setCurrentMonth(month)
 
         const budget = await getOrCreateBudget(year, month)
         const [summaryData, catTotals, planned, categories, transactions] = await Promise.all([
@@ -35,6 +41,7 @@ export default function DashboardPage() {
         ])
 
         setSummary(summaryData)
+        setRecentTransactions(transactions.slice(0, 5))
 
         // Build category progress (expense parents only)
         const expenseParents = categories.filter(c => c.type === 'expense')
@@ -49,26 +56,20 @@ export default function DashboardPage() {
           const plannedTotal = childIds.reduce((sum, id) => sum + (plannedMap[id] || 0), 0) + (plannedMap[parent.id] || 0)
           const percentage = plannedTotal > 0 ? Math.round((actualTotal / plannedTotal) * 100) : 0
 
-          return {
-            name: parent.name,
-            planned: plannedTotal,
-            actual: actualTotal,
-            percentage,
-          }
+          return { name: parent.name, planned: plannedTotal, actual: actualTotal, percentage }
         }).filter(p => p.planned > 0 || p.actual > 0)
 
         setCategoryProgress(progress)
 
-        // Build daily cumulative trend (expenses)
-        const expenseTransactions = transactions.filter(
+        // Build daily cumulative trend
+        const expenseTx = transactions.filter(
           t => t.category && (t.category as unknown as { type: string }).type === 'expense'
         )
         const dailyMap: Record<number, number> = {}
-        for (const t of expenseTransactions) {
+        for (const t of expenseTx) {
           const day = new Date(t.date).getDate()
           dailyMap[day] = (dailyMap[day] || 0) + Number(t.amount)
         }
-
         const daysInMonth = new Date(year, month, 0).getDate()
         const today = now.getDate()
         const trend: { day: string; amount: number }[] = []
@@ -79,7 +80,7 @@ export default function DashboardPage() {
         }
         setDailyTrend(trend)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Błąd ładowania danych')
+        setError(err instanceof Error ? err.message : 'B\u0142\u0105d \u0142adowania danych')
       } finally {
         setLoading(false)
       }
@@ -103,15 +104,44 @@ export default function DashboardPage() {
     )
   }
 
+  const MONTH_NAMES = [
+    'Stycze\u0144', 'Luty', 'Marzec', 'Kwiecie\u0144', 'Maj', 'Czerwiec',
+    'Lipiec', 'Sierpie\u0144', 'Wrzesie\u0144', 'Pa\u017adziernik', 'Listopad', 'Grudzie\u0144',
+  ]
+  const monthName = MONTH_NAMES[currentMonth - 1]
   const hasData = summary.total_income > 0 || summary.total_expenses > 0
 
   return (
-    <div className="space-y-8 pb-20 md:pb-8">
+    <div className="space-y-6 pb-20 md:pb-8">
+      {/* Welcome + Quick Actions */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[#ededed]">{monthName} {currentYear}</h1>
+          <p className="text-[#999] text-sm">Przegl\u0105d bie\u017c\u0105cego miesi\u0105ca</p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <Link
+            href={`/dashboard/month/${currentYear}/${currentMonth}`}
+            className="flex items-center space-x-2 bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] hover:from-[#5a4bc4] hover:to-[#9189d8] text-white font-semibold px-4 py-2.5 rounded-lg transition text-sm"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Dodaj transakcj\u0119</span>
+          </Link>
+          <Link
+            href="/dashboard/scan"
+            className="flex items-center space-x-2 bg-[#1e1e24] hover:bg-[#2a2a35] text-[#ededed] font-semibold px-4 py-2.5 rounded-lg border border-[#2a2a35] transition text-sm"
+          >
+            <Camera className="w-4 h-4" />
+            <span>Skanuj</span>
+          </Link>
+        </div>
+      </div>
+
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard title="Przychody" amount={summary.total_income} icon={TrendingUp} color="text-[#00b894]" />
         <StatCard title="Wydatki" amount={summary.total_expenses} icon={TrendingDown} color="text-[#e17055]" />
-        <StatCard title="Oszczędności" amount={summary.total_savings} icon={PiggyBank} color="text-[#74b9ff]" />
+        <StatCard title="Oszcz\u0119dno\u015bci" amount={summary.total_savings} icon={PiggyBank} color="text-[#74b9ff]" />
         <StatCard
           title="Zostaje"
           amount={summary.remaining}
@@ -121,22 +151,94 @@ export default function DashboardPage() {
       </div>
 
       {!hasData && (
-        <div className="bg-[#141418] rounded-lg border border-[#2a2a35] p-8 text-center">
-          <p className="text-[#999] mb-2">Brak transakcji w tym miesiącu.</p>
-          <p className="text-[#666] text-sm">
-            Dodaj pierwszą transakcję w widoku miesięcznym lub zeskanuj paragon.
-          </p>
+        <div className="bg-[#141418] rounded-lg border border-[#2a2a35] p-8 text-center space-y-4">
+          <div className="w-16 h-16 mx-auto rounded-full bg-[#6c5ce7]/10 flex items-center justify-center">
+            <Calendar className="w-8 h-8 text-[#6c5ce7]" />
+          </div>
+          <div>
+            <p className="text-[#ededed] font-semibold mb-1">Brak transakcji w tym miesi\u0105cu</p>
+            <p className="text-[#666] text-sm mb-4">
+              Zacznij od dodania transakcji lub zeskanowania paragonu.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href={`/dashboard/month/${currentYear}/${currentMonth}`}
+              className="flex items-center space-x-2 bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] hover:from-[#5a4bc4] hover:to-[#9189d8] text-white font-semibold px-6 py-3 rounded-lg transition text-sm"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Dodaj transakcj\u0119</span>
+            </Link>
+            <Link
+              href="/dashboard/scan"
+              className="flex items-center space-x-2 bg-[#1e1e24] hover:bg-[#2a2a35] text-[#ededed] font-semibold px-6 py-3 rounded-lg border border-[#2a2a35] transition text-sm"
+            >
+              <Camera className="w-4 h-4" />
+              <span>Skanuj paragon</span>
+            </Link>
+            <Link
+              href="/dashboard/categories"
+              className="flex items-center space-x-2 text-[#6c5ce7] hover:text-[#a29bfe] font-medium px-4 py-3 transition text-sm"
+            >
+              <span>Edytuj kategorie</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
       )}
 
       {/* Categories Progress */}
       {categoryProgress.length > 0 && (
         <div className="bg-[#141418] rounded-lg border border-[#2a2a35] p-6">
-          <h2 className="text-lg font-semibold text-[#ededed] mb-6">Plan vs Realizacja</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-[#ededed]">Plan vs Realizacja</h2>
+            <Link
+              href={`/dashboard/month/${currentYear}/${currentMonth}`}
+              className="text-xs text-[#6c5ce7] hover:text-[#a29bfe] transition"
+            >
+              Szczeg\u00f3\u0142y &rarr;
+            </Link>
+          </div>
           <div className="space-y-4">
             {categoryProgress.map((category) => (
               <CategoryProgressBar key={category.name} category={category} />
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Transactions */}
+      {recentTransactions.length > 0 && (
+        <div className="bg-[#141418] rounded-lg border border-[#2a2a35] overflow-hidden">
+          <div className="flex items-center justify-between p-4 border-b border-[#2a2a35]">
+            <h2 className="text-lg font-semibold text-[#ededed]">Ostatnie transakcje</h2>
+            <Link
+              href={`/dashboard/month/${currentYear}/${currentMonth}`}
+              className="text-xs text-[#6c5ce7] hover:text-[#a29bfe] transition"
+            >
+              Wszystkie &rarr;
+            </Link>
+          </div>
+          <div className="divide-y divide-[#2a2a35]">
+            {recentTransactions.map(tx => {
+              const cat = tx.category as unknown as { name: string; type: string } | undefined
+              return (
+                <div key={tx.id} className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-[#ededed]">{cat?.name || 'Brak kategorii'}</p>
+                    {tx.description && <p className="text-xs text-[#666]">{tx.description}</p>}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-[#ededed]">
+                      {Number(tx.amount).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} z\u0142
+                    </p>
+                    <p className="text-xs text-[#666]">
+                      {new Date(tx.date).toLocaleDateString('pl-PL')}
+                    </p>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
@@ -164,7 +266,7 @@ export default function DashboardPage() {
                     borderRadius: '8px',
                     color: '#ededed',
                   }}
-                  formatter={(value) => [`${value} zł`, 'Wydatki']}
+                  formatter={(value: number) => [`${value} z\u0142`, 'Wydatki']}
                 />
                 <Area type="monotone" dataKey="amount" stroke="#6c5ce7" strokeWidth={2} fillOpacity={1} fill="url(#colorAmount)" />
               </AreaChart>
@@ -172,6 +274,14 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Quick Links */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <QuickLink href={`/dashboard/year/${currentYear}`} label="Widok roczny" icon={BarChart3} />
+        <QuickLink href="/dashboard/accounts" label="Konta" icon={DollarSign} />
+        <QuickLink href="/dashboard/categories" label="Kategorie" icon={Calendar} />
+        <QuickLink href="/dashboard/documents" label="Dokumenty" icon={Camera} />
+      </div>
     </div>
   )
 }
@@ -188,13 +298,13 @@ function StatCard({
   color: string
 }) {
   return (
-    <div className="bg-[#141418] rounded-lg border border-[#2a2a35] p-6 hover:border-[#6c5ce7] transition">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-[#999]">{title}</h3>
-        <Icon className={`w-5 h-5 ${color}`} />
+    <div className="bg-[#141418] rounded-lg border border-[#2a2a35] p-4 md:p-6 hover:border-[#6c5ce7] transition">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-xs md:text-sm font-medium text-[#999]">{title}</h3>
+        <Icon className={`w-4 h-4 md:w-5 md:h-5 ${color}`} />
       </div>
-      <p className="text-2xl font-bold text-[#ededed]">
-        {amount.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł
+      <p className="text-lg md:text-2xl font-bold text-[#ededed]">
+        {amount.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} z\u0142
       </p>
     </div>
   )
@@ -221,9 +331,29 @@ function CategoryProgressBar({
       </div>
       <div className="flex items-center justify-between mt-1">
         <span className="text-xs text-[#666]">
-          {category.actual.toLocaleString('pl-PL')} / {category.planned.toLocaleString('pl-PL')} zł
+          {category.actual.toLocaleString('pl-PL')} / {category.planned.toLocaleString('pl-PL')} z\u0142
         </span>
       </div>
     </div>
+  )
+}
+
+function QuickLink({
+  href,
+  label,
+  icon: Icon,
+}: {
+  href: string
+  label: string
+  icon: React.ComponentType<{ className: string }>
+}) {
+  return (
+    <Link
+      href={href}
+      className="bg-[#141418] rounded-lg border border-[#2a2a35] p-4 flex flex-col items-center justify-center space-y-2 hover:border-[#6c5ce7] hover:bg-[#1e1e24] transition group"
+    >
+      <Icon className="w-6 h-6 text-[#666] group-hover:text-[#6c5ce7] transition" />
+      <span className="text-xs font-medium text-[#999] group-hover:text-[#ededed] transition">{label}</span>
+    </Link>
   )
 }

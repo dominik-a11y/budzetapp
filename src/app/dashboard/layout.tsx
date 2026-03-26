@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   LayoutDashboard,
@@ -16,7 +16,6 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronDown,
 } from 'lucide-react'
 
 export default function DashboardLayout({
@@ -27,7 +26,12 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const router = useRouter()
+  const pathname = usePathname()
   const supabase = createClient()
+
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth() + 1
 
   useEffect(() => {
     const getUser = async () => {
@@ -46,12 +50,19 @@ export default function DashboardLayout({
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/dashboard/month', label: 'Miesiąc', icon: Calendar },
-    { href: '/dashboard/year/2026', label: 'Rok', icon: BarChart3 },
+    { href: `/dashboard/month/${currentYear}/${currentMonth}`, label: 'Bie\u017c\u0105cy miesi\u0105c', icon: Calendar },
+    { href: `/dashboard/year/${currentYear}`, label: 'Rok ' + currentYear, icon: BarChart3 },
     { href: '/dashboard/accounts', label: 'Konta', icon: Wallet },
     { href: '/dashboard/documents', label: 'Dokumenty', icon: FileText },
-    { href: '/dashboard/scan', label: 'Skanuj', icon: Camera },
+    { href: '/dashboard/scan', label: 'Skanuj paragon', icon: Camera },
     { href: '/dashboard/categories', label: 'Kategorie', icon: Tags },
+    { href: '/dashboard/settings', label: 'Ustawienia', icon: Settings },
+  ]
+
+  const mobileNavItems = [
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: `/dashboard/month/${currentYear}/${currentMonth}`, label: 'Miesi\u0105c', icon: Calendar },
+    { href: '/dashboard/scan', label: 'Skanuj', icon: Camera },
     { href: '/dashboard/settings', label: 'Ustawienia', icon: Settings },
   ]
 
@@ -85,22 +96,31 @@ export default function DashboardLayout({
                   />
                 </svg>
               </div>
-              <span className="font-bold text-lg text-[#ededed]">BudżetApp</span>
+              <span className="font-bold text-lg text-[#ededed]">Bud\u017cetApp</span>
             </Link>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-2">
+          <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon
+              const isActive = pathname === item.href ||
+                (item.href !== '/dashboard' && pathname.startsWith(item.href))
+
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
-                  className="flex items-center space-x-3 px-4 py-2.5 rounded-lg text-[#999] hover:text-[#ededed] hover:bg-[#1e1e24] transition group"
+                  className={`flex items-center space-x-3 px-4 py-2.5 rounded-lg transition group ${
+                    isActive
+                      ? 'bg-[#6c5ce7]/10 text-[#6c5ce7]'
+                      : 'text-[#999] hover:text-[#ededed] hover:bg-[#1e1e24]'
+                  }`}
                 >
-                  <Icon className="w-5 h-5 group-hover:text-[#6c5ce7] transition" />
+                  <Icon className={`w-5 h-5 ${
+                    isActive ? 'text-[#6c5ce7]' : 'group-hover:text-[#6c5ce7]'
+                  } transition`} />
                   <span className="text-sm font-medium">{item.label}</span>
                 </Link>
               )
@@ -108,13 +128,16 @@ export default function DashboardLayout({
           </nav>
 
           {/* User Section */}
-          <div className="p-4 border-t border-[#2a2a35] space-y-3">
+          <div className="p-4 border-t border-[#2a2a35] space-y-2">
+            {userEmail && (
+              <p className="px-4 text-xs text-[#666] truncate">{userEmail}</p>
+            )}
             <button
               onClick={handleLogout}
               className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-[#999] hover:text-[#e17055] hover:bg-[#1e1e24] transition"
             >
               <LogOut className="w-5 h-5" />
-              <span className="text-sm font-medium">Wyloguj się</span>
+              <span className="text-sm font-medium">Wyloguj si\u0119</span>
             </button>
           </div>
         </div>
@@ -135,15 +158,18 @@ export default function DashboardLayout({
             )}
           </button>
 
-          <div className="hidden md:flex items-center space-x-4">
-            <select className="bg-[#1e1e24] border border-[#2a2a35] text-[#ededed] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6c5ce7]">
-              <option>Marzec 2026</option>
-              <option>Luty 2026</option>
-              <option>Styczeń 2026</option>
-            </select>
+          <div className="hidden md:flex items-center space-x-3">
+            <MonthNavigator currentYear={currentYear} currentMonth={currentMonth} />
           </div>
 
           <div className="flex items-center space-x-4">
+            <Link
+              href="/dashboard/scan"
+              className="hidden md:flex items-center space-x-1.5 bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] hover:from-[#5a4bc4] hover:to-[#9189d8] text-white font-semibold px-4 py-2 rounded-lg transition text-sm"
+            >
+              <Camera className="w-4 h-4" />
+              <span>Skanuj</span>
+            </Link>
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#6c5ce7] to-[#a29bfe] flex items-center justify-center text-white font-semibold text-sm cursor-pointer hover:opacity-80 transition">
               {userEmail ? userEmail.charAt(0).toUpperCase() : 'U'}
             </div>
@@ -157,13 +183,18 @@ export default function DashboardLayout({
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#141418] border-t border-[#2a2a35] z-40">
         <div className="flex justify-around">
-          {navItems.slice(0, 4).map((item) => {
+          {mobileNavItems.map((item) => {
             const Icon = item.icon
+            const isActive = pathname === item.href ||
+              (item.href !== '/dashboard' && pathname.startsWith(item.href))
+
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex-1 flex flex-col items-center justify-center py-3 text-[#999] hover:text-[#6c5ce7] transition"
+                className={`flex-1 flex flex-col items-center justify-center py-3 transition ${
+                  isActive ? 'text-[#6c5ce7]' : 'text-[#999] hover:text-[#6c5ce7]'
+                }`}
               >
                 <Icon className="w-5 h-5 mb-1" />
                 <span className="text-xs">{item.label}</span>
@@ -181,5 +212,40 @@ export default function DashboardLayout({
         />
       )}
     </div>
+  )
+}
+
+const MONTH_NAMES = [
+  'Stycze\u0144', 'Luty', 'Marzec', 'Kwiecie\u0144', 'Maj', 'Czerwiec',
+  'Lipiec', 'Sierpie\u0144', 'Wrzesie\u0144', 'Pa\u017adziernik', 'Listopad', 'Grudzie\u0144',
+]
+
+function MonthNavigator({ currentYear, currentMonth }: { currentYear: number; currentMonth: number }) {
+  const router = useRouter()
+
+  // Generate last 6 months as options
+  const options: { year: number; month: number; label: string }[] = []
+  for (let i = 0; i < 6; i++) {
+    let m = currentMonth - i
+    let y = currentYear
+    if (m < 1) { m += 12; y-- }
+    options.push({ year: y, month: m, label: `${MONTH_NAMES[m - 1]} ${y}` })
+  }
+
+  return (
+    <select
+      defaultValue={`${currentYear}-${currentMonth}`}
+      onChange={(e) => {
+        const [y, m] = e.target.value.split('-')
+        router.push(`/dashboard/month/${y}/${m}`)
+      }}
+      className="bg-[#1e1e24] border border-[#2a2a35] text-[#ededed] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6c5ce7] cursor-pointer"
+    >
+      {options.map(o => (
+        <option key={`${o.year}-${o.month}`} value={`${o.year}-${o.month}`}>
+          {o.label}
+        </option>
+      ))}
+    </select>
   )
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { TrendingUp, TrendingDown, DollarSign, Loader2, PiggyBank, Plus, Camera, Calendar, ArrowRight } from 'lucide-react'
+import { TrendingUp, TrendingDown, DollarSign, Loader2, PiggyBank, Plus, Camera, Calendar, ArrowRight, BarChart3 } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { getOrCreateBudget } from '@/lib/actions/budgets'
 import { getMonthSummary, getCategoryTotals, getTransactions } from '@/lib/actions/transactions'

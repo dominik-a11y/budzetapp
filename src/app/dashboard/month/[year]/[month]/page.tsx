@@ -1,98 +1,244 @@
 'use client'
 
-import { useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useParams } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
+import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Check, X, Loader2 } from 'lucide-react'
+import { useParams, useRouter } from 'next/navigation'
+import { getOrCreateBudget } from '@/lib/actions/budgets'
+import { getPlannedAmounts, upsertPlannedAmount } from '@/lib/actions/budgets'
+import { getTransactions, createTransaction, updateTransaction, deleteTransaction, getCategoryTotals } from '@/lib/actions/transactions'
+import { getCategories } from '@/lib/actions/categories'
+import type { Budget, CategoryWithChildren, Category, Transaction, PlannedAmount } from '@/types/budget'
 
 const monthNames = [
-  'Styczeń',
-  'Luty',
-  'Marzec',
-  'Kwiecień',
-  'Maj',
-  'Czerwiec',
-  'Lipiec',
-  'Sierpień',
-  'Wrzesień',
-  'Październik',
-  'Listopad',
-  'Grudzień',
+  'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
+  'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień',
 ]
 
-const mockTransactions = [
-  { day: 1, category: 'Jedzenie', subcategory: 'Jedzenie dom', planned: 20, actual: 45 },
-  { day: 2, category: 'Transport', subcategory: 'Paliwo do auta', planned: 20, actual: 0 },
-  { day: 3, category: 'Jedzenie', subcategory: 'Jedzenie miasto', planned: 30, actual: 60 },
-  { day: 5, category: 'Transport', subcategory: 'Paliwo do auta', planned: 20, actual: 60 },
-  { day: 8, category: 'Mieszkanie', subcategory: 'Czynsz', planned: 500, actual: 500 },
-  { day: 10, category: 'Higiena', subcategory: 'Kosmetyki', planned: 20, actual: 35 },
-  { day: 12, category: 'Rozrywka', subcategory: 'Kino / Teatr', planned: 50, actual: 50 },
-  { day: 15, category: 'Jedzenie', subcategory: 'Jedzenie dom', planned: 20, actual: 55 },
-]
-
-const categoryGroups = [
-  {
-    name: 'Jedzenie',
-    planned: 600,
-    actual: 650,
-    subcategories: [
-      { name: 'Jedzenie dom', planned: 400, actual: 430 },
-      { name: 'Jedzenie miasto', planned: 150, actual: 180 },
-      { name: 'Alkohol', planned: 50, actual: 40 },
-    ],
-  },
-  {
-    name: 'Transport',
-    planned: 400,
-    actual: 380,
-    subcategories: [
-      { name: 'Paliwo do auta', planned: 300, actual: 280 },
-      { name: 'Bilet komunikacji', planned: 100, actual: 100 },
-    ],
-  },
-  {
-    name: 'Mieszkanie',
-    planned: 1500,
-    actual: 1500,
-    subcategories: [
-      { name: 'Czynsz', planned: 1000, actual: 1000 },
-      { name: 'Prąd', planned: 250, actual: 250 },
-      { name: 'Woda', planned: 150, actual: 150 },
-      { name: 'Gaz', planned: 100, actual: 100 },
-    ],
-  },
-  {
-    name: 'Higiena',
-    planned: 150,
-    actual: 120,
-    subcategories: [
-      { name: 'Kosmetyki', planned: 80, actual: 65 },
-      { name: 'Fryzjer', planned: 70, actual: 55 },
-    ],
-  },
-  {
-    name: 'Rozrywka',
-    planned: 300,
-    actual: 320,
-    subcategories: [
-      { name: 'Kino / Teatr', planned: 150, actual: 150 },
-      { name: 'Hobby', planned: 100, actual: 120 },
-      { name: 'Książki', planned: 50, actual: 50 },
-    ],
-  },
-]
+interface CategoryGroupData {
+  id: string
+  name: string
+  type: string
+  planned: number
+  actual: number
+  subcategories: {
+    id: string
+    name: string
+    planned: number
+    actual: number
+  }[]
+}
 
 export default function MonthPage() {
   const params = useParams()
-  const monthNum = parseInt(params.month as string) - 1
-  const year = params.year as string
-  const [expanded, setExpanded] = useState<string | null>(null)
-  const [showModal, setShowModal] = useState(false)
+  const router = useRouter()
+  const monthNum = parseInt(params.month as string)
+  const year = parseInt(params.year as string)
 
-  const monthName = monthNames[monthNum]
-  const totalPlanned = categoryGroups.reduce((sum, g) => sum + g.planned, 0)
-  const totalActual = categoryGroups.reduce((sum, g) => sum + g.actual, 0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [budget, setBudget] = useState<Budget | null>(null)
+  const [categories, setCategories] = useState<CategoryWithChildren[]>([])
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [plannedMap, setPlannedMap] = useState<Record<string, number>>({})
+  const [catTotals, setCatTotals] = useState<Record<string, number>>({})
+
+  // Transaction form
+  const [showAddTx, setShowAddTx] = useState(false)
+  const [txCategoryId, setTxCategoryId] = useState('')
+  const [txAmount, setTxAmount] = useState('')
+  const [txDate, setTxDate] = useState('')
+  const [txDescription, setTxDescription] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  // Edit transaction
+  const [editingTxId, setEditingTxId] = useState<string | null>(null)
+  const [editTxCategoryId, setEditTxCategoryId] = useState('')
+  const [editTxAmount, setEditTxAmount] = useState('')
+  const [editTxDate, setEditTxDate] = useState('')
+  const [editTxDescription, setEditTxDescription] = useState('')
+
+  // Edit planned amount
+  const [editingPlannedId, setEditingPlannedId] = useState<string | null>(null)
+  const [editPlannedValue, setEditPlannedValue] = useState('')
+
+  // Active tab for category type filter
+  const [activeTab, setActiveTab] = useState<'expense' | 'income' | 'savings'>('expense')
+
+  const monthName = monthNames[monthNum - 1]
+
+  const loadData = useCallback(async () => {
+    try {
+      setError(null)
+      const b = await getOrCreateBudget(year, monthNum)
+      setBudget(b)
+
+      const [cats, txs, planned, totals] = await Promise.all([
+        getCategories(),
+        getTransactions(b.id),
+        getPlannedAmounts(b.id),
+        getCategoryTotals(b.id),
+      ])
+
+      setCategories(cats)
+      setTransactions(txs)
+      setCatTotals(totals)
+
+      const pMap: Record<string, number> = {}
+      for (const p of planned) {
+        pMap[p.category_id] = Number(p.amount)
+      }
+      setPlannedMap(pMap)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Błąd ładowania danych')
+    } finally {
+      setLoading(false)
+    }
+  }, [year, monthNum])
+
+  useEffect(() => {
+    setLoading(true)
+    loadData()
+  }, [loadData])
+
+  // Build category groups for the active tab
+  const categoryGroups: CategoryGroupData[] = categories
+    .filter(c => c.type === activeTab)
+    .map(parent => {
+      const subs = parent.children.map(child => ({
+        id: child.id,
+        name: child.name,
+        planned: plannedMap[child.id] || 0,
+        actual: catTotals[child.id] || 0,
+      }))
+
+      const plannedTotal = subs.reduce((s, c) => s + c.planned, 0) + (plannedMap[parent.id] || 0)
+      const actualTotal = subs.reduce((s, c) => s + c.actual, 0) + (catTotals[parent.id] || 0)
+
+      return {
+        id: parent.id,
+        name: parent.name,
+        type: parent.type,
+        planned: plannedTotal,
+        actual: actualTotal,
+        subcategories: subs,
+      }
+    })
+    .filter(g => g.planned > 0 || g.actual > 0 || g.subcategories.length > 0)
+
+  const totalPlanned = categoryGroups.reduce((s, g) => s + g.planned, 0)
+  const totalActual = categoryGroups.reduce((s, g) => s + g.actual, 0)
   const remaining = totalPlanned - totalActual
+
+  // Build flat list of leaf categories for the transaction dropdown
+  const leafCategories: Category[] = categories.flatMap(parent => {
+    if (parent.children.length > 0) return parent.children
+    return [parent as Category]
+  })
+
+  // Filter transactions for active tab
+  const filteredTransactions = transactions.filter(t => {
+    const cat = t.category as Category | undefined
+    return cat?.type === activeTab
+  })
+
+  const navigateMonth = (delta: number) => {
+    let newMonth = monthNum + delta
+    let newYear = year
+    if (newMonth < 1) { newMonth = 12; newYear-- }
+    if (newMonth > 12) { newMonth = 1; newYear++ }
+    router.push(`/dashboard/month/${newYear}/${newMonth}`)
+  }
+
+  // === Handlers ===
+
+  const handleAddTransaction = async () => {
+    if (!budget || !txCategoryId || !txAmount || !txDate) return
+    setSaving(true)
+    try {
+      await createTransaction({
+        budget_id: budget.id,
+        category_id: txCategoryId,
+        amount: parseFloat(txAmount),
+        date: txDate,
+        description: txDescription || undefined,
+      })
+      setShowAddTx(false)
+      setTxCategoryId('')
+      setTxAmount('')
+      setTxDate('')
+      setTxDescription('')
+      await loadData()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Błąd dodawania transakcji')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleEditTransaction = async (id: string) => {
+    if (!editTxAmount || !editTxDate || !editTxCategoryId) return
+    setSaving(true)
+    try {
+      await updateTransaction(id, {
+        category_id: editTxCategoryId,
+        amount: parseFloat(editTxAmount),
+        date: editTxDate,
+        description: editTxDescription || undefined,
+      })
+      setEditingTxId(null)
+      await loadData()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Błąd edycji transakcji')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDeleteTransaction = async (id: string) => {
+    setSaving(true)
+    try {
+      await deleteTransaction(id)
+      await loadData()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Błąd usuwania transakcji')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSavePlanned = async (categoryId: string) => {
+    if (!budget) return
+    setSaving(true)
+    try {
+      await upsertPlannedAmount({
+        budget_id: budget.id,
+        category_id: categoryId,
+        amount: parseFloat(editPlannedValue) || 0,
+      })
+      setEditingPlannedId(null)
+      await loadData()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Błąd zapisywania planu')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const startEditTx = (tx: Transaction) => {
+    setEditingTxId(tx.id)
+    setEditTxCategoryId(tx.category_id)
+    setEditTxAmount(String(tx.amount))
+    setEditTxDate(tx.date)
+    setEditTxDescription(tx.description || '')
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 text-[#6c5ce7] animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
@@ -104,114 +250,384 @@ export default function MonthPage() {
           </h1>
         </div>
         <div className="flex items-center space-x-2">
-          <button className="p-2 hover:bg-[#1e1e24] rounded-lg transition">
+          <button
+            onClick={() => navigateMonth(-1)}
+            className="p-2 hover:bg-[#1e1e24] rounded-lg transition"
+          >
             <ChevronLeft className="w-5 h-5 text-[#ededed]" />
           </button>
-          <button className="p-2 hover:bg-[#1e1e24] rounded-lg transition">
+          <button
+            onClick={() => navigateMonth(1)}
+            className="p-2 hover:bg-[#1e1e24] rounded-lg transition"
+          >
             <ChevronRight className="w-5 h-5 text-[#ededed]" />
           </button>
         </div>
       </div>
 
+      {error && (
+        <div className="p-3 bg-[#e17055]/10 border border-[#e17055]/30 rounded-lg text-[#ff7675] text-sm">
+          {error}
+        </div>
+      )}
+
+      {/* Tab Switcher */}
+      <div className="flex space-x-1 bg-[#141418] rounded-lg p-1 border border-[#2a2a35]">
+        {(['expense', 'income', 'savings'] as const).map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition ${
+              activeTab === tab
+                ? 'bg-[#6c5ce7] text-white'
+                : 'text-[#999] hover:text-[#ededed]'
+            }`}
+          >
+            {tab === 'expense' ? 'Wydatki' : tab === 'income' ? 'Przychody' : 'Oszczędności'}
+          </button>
+        ))}
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <SummaryCard
-          title="Plan"
-          amount={totalPlanned}
-          color="text-[#74b9ff]"
-        />
-        <SummaryCard
-          title="Realizacja"
-          amount={totalActual}
-          color="text-[#a29bfe]"
-        />
+        <SummaryCard title="Plan" amount={totalPlanned} color="text-[#74b9ff]" />
+        <SummaryCard title="Realizacja" amount={totalActual} color="text-[#a29bfe]" />
         <SummaryCard
           title="Pozostało"
           amount={remaining}
-          color={remaining > 0 ? 'text-[#00b894]' : 'text-[#e17055]'}
+          color={remaining >= 0 ? 'text-[#00b894]' : 'text-[#e17055]'}
         />
       </div>
 
-      {/* Categories */}
+      {/* Categories with planned amounts */}
       <div className="space-y-4">
+        {categoryGroups.length === 0 && (
+          <div className="bg-[#141418] rounded-lg border border-[#2a2a35] p-8 text-center">
+            <p className="text-[#999] mb-2">Brak kategorii z planem lub transakcjami.</p>
+            <p className="text-[#666] text-sm">Ustaw planowane kwoty, aby śledzić budżet.</p>
+          </div>
+        )}
+
         {categoryGroups.map((group) => {
-          const isOver = group.actual > group.planned
-          const isExpanded = expanded === group.name
+          const isOver = group.actual > group.planned && group.planned > 0
+          const pct = group.planned > 0 ? Math.round((group.actual / group.planned) * 100) : 0
 
           return (
             <div
-              key={group.name}
+              key={group.id}
               className="bg-[#141418] rounded-lg border border-[#2a2a35] overflow-hidden"
             >
               {/* Category Header */}
-              <button
-                onClick={() =>
-                  setExpanded(isExpanded ? null : group.name)
-                }
-                className="w-full p-4 flex items-center justify-between hover:bg-[#1e1e24] transition"
-              >
-                <div className="flex-1 text-left">
-                  <h3 className="font-semibold text-[#ededed]">
-                    {group.name}
-                  </h3>
-                  <div className="flex items-center space-x-4 mt-2 text-sm">
-                    <span className="text-[#666]">Plan: {group.planned} zł</span>
-                    <span className="text-[#666]">
-                      Realizacja: {group.actual} zł
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold text-[#ededed]">{group.name}</h3>
+                  {group.planned > 0 && (
+                    <span className={`text-xs font-semibold ${isOver ? 'text-[#e17055]' : 'text-[#00b894]'}`}>
+                      {pct}%
                     </span>
-                    <span
-                      className={`font-semibold ${
-                        isOver ? 'text-[#e17055]' : 'text-[#00b894]'
-                      }`}
-                    >
-                      {((group.actual / group.planned) * 100).toFixed(0)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-[#1e1e24] rounded-full h-2 mt-2 overflow-hidden">
+                  )}
+                </div>
+                <div className="flex items-center space-x-4 text-sm mb-2">
+                  <span className="text-[#666]">Plan: {group.planned.toLocaleString('pl-PL')} zł</span>
+                  <span className="text-[#666]">Realizacja: {group.actual.toLocaleString('pl-PL')} zł</span>
+                </div>
+                {group.planned > 0 && (
+                  <div className="w-full bg-[#1e1e24] rounded-full h-2 overflow-hidden">
                     <div
-                      className={`h-full ${
-                        isOver ? 'bg-[#e17055]' : 'bg-[#00b894]'
-                      }`}
-                      style={{
-                        width: `${Math.min((group.actual / group.planned) * 100, 100)}%`,
-                      }}
+                      className={`h-full transition-all ${isOver ? 'bg-[#e17055]' : 'bg-[#00b894]'}`}
+                      style={{ width: `${Math.min(pct, 100)}%` }}
                     />
                   </div>
-                </div>
-              </button>
+                )}
+              </div>
 
-              {/* Subcategories */}
-              {isExpanded && (
+              {/* Subcategories with editable planned */}
+              {group.subcategories.length > 0 && (
                 <div className="border-t border-[#2a2a35] bg-[#1e1e24] p-4 space-y-3">
-                  {group.subcategories.map((sub) => (
-                    <div key={sub.name} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-[#999]">
-                          {sub.name}
-                        </span>
-                        <span className="text-xs text-[#666]">
-                          {sub.actual} / {sub.planned} zł
-                        </span>
+                  {group.subcategories.map(sub => {
+                    const subPct = sub.planned > 0 ? Math.round((sub.actual / sub.planned) * 100) : 0
+                    const subOver = sub.actual > sub.planned && sub.planned > 0
+
+                    return (
+                      <div key={sub.id} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-[#999]">{sub.name}</span>
+                          <div className="flex items-center space-x-3">
+                            {editingPlannedId === sub.id ? (
+                              <div className="flex items-center space-x-1">
+                                <input
+                                  type="number"
+                                  value={editPlannedValue}
+                                  onChange={(e) => setEditPlannedValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSavePlanned(sub.id)
+                                    if (e.key === 'Escape') setEditingPlannedId(null)
+                                  }}
+                                  className="w-24 px-2 py-1 bg-[#141418] border border-[#6c5ce7] rounded text-xs text-[#ededed] text-right focus:outline-none"
+                                  autoFocus
+                                />
+                                <button onClick={() => handleSavePlanned(sub.id)} className="p-1 hover:bg-[#2a2a35] rounded">
+                                  <Check className="w-3.5 h-3.5 text-[#00b894]" />
+                                </button>
+                                <button onClick={() => setEditingPlannedId(null)} className="p-1 hover:bg-[#2a2a35] rounded">
+                                  <X className="w-3.5 h-3.5 text-[#666]" />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setEditingPlannedId(sub.id)
+                                  setEditPlannedValue(String(sub.planned))
+                                }}
+                                className="text-xs text-[#666] hover:text-[#6c5ce7] transition"
+                              >
+                                {sub.actual.toLocaleString('pl-PL')} / {sub.planned.toLocaleString('pl-PL')} zł
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {sub.planned > 0 && (
+                          <div className="w-full bg-[#141418] rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className={`h-full ${subOver ? 'bg-[#e17055]' : 'bg-[#00b894]'}`}
+                              style={{ width: `${Math.min(subPct, 100)}%` }}
+                            />
+                          </div>
+                        )}
                       </div>
-                      <div className="w-full bg-[#141418] rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className={`h-full ${
-                            sub.actual > sub.planned
-                              ? 'bg-[#e17055]'
-                              : 'bg-[#00b894]'
-                          }`}
-                          style={{
-                            width: `${Math.min((sub.actual / sub.planned) * 100, 100)}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>
           )
         })}
+      </div>
+
+      {/* Transactions Section */}
+      <div className="bg-[#141418] rounded-lg border border-[#2a2a35] overflow-hidden">
+        <div className="flex items-center justify-between p-4 border-b border-[#2a2a35]">
+          <h2 className="text-lg font-semibold text-[#ededed]">Transakcje</h2>
+          <button
+            onClick={() => {
+              setShowAddTx(true)
+              // Default date to today
+              const today = new Date()
+              const dd = String(today.getDate()).padStart(2, '0')
+              const mm = String(today.getMonth() + 1).padStart(2, '0')
+              setTxDate(`${year}-${mm}-${dd}`)
+            }}
+            className="flex items-center space-x-1.5 bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] hover:from-[#5a4bc4] hover:to-[#9189d8] text-white font-semibold px-3 py-2 rounded-lg transition text-sm"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Dodaj</span>
+          </button>
+        </div>
+
+        {/* Add Transaction Form */}
+        {showAddTx && (
+          <div className="p-4 border-b border-[#2a2a35] bg-[#1e1e24] space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-[#999] mb-1">Kategoria</label>
+                <select
+                  value={txCategoryId}
+                  onChange={(e) => setTxCategoryId(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#141418] border border-[#2a2a35] rounded-lg text-sm text-[#ededed] focus:outline-none focus:border-[#6c5ce7]"
+                >
+                  <option value="">Wybierz kategorię...</option>
+                  {categories.filter(c => c.type === activeTab).map(parent => (
+                    <optgroup key={parent.id} label={parent.name}>
+                      {parent.children.map(child => (
+                        <option key={child.id} value={child.id}>{child.name}</option>
+                      ))}
+                      {parent.children.length === 0 && (
+                        <option value={parent.id}>{parent.name}</option>
+                      )}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#999] mb-1">Kwota (zł)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={txAmount}
+                  onChange={(e) => setTxAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full px-3 py-2 bg-[#141418] border border-[#2a2a35] rounded-lg text-sm text-[#ededed] placeholder-[#666] focus:outline-none focus:border-[#6c5ce7]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#999] mb-1">Data</label>
+                <input
+                  type="date"
+                  value={txDate}
+                  onChange={(e) => setTxDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#141418] border border-[#2a2a35] rounded-lg text-sm text-[#ededed] focus:outline-none focus:border-[#6c5ce7]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#999] mb-1">Opis (opcjonalny)</label>
+                <input
+                  type="text"
+                  value={txDescription}
+                  onChange={(e) => setTxDescription(e.target.value)}
+                  placeholder="np. Biedronka, zakupy"
+                  className="w-full px-3 py-2 bg-[#141418] border border-[#2a2a35] rounded-lg text-sm text-[#ededed] placeholder-[#666] focus:outline-none focus:border-[#6c5ce7]"
+                />
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleAddTransaction}
+                disabled={saving || !txCategoryId || !txAmount || !txDate}
+                className="px-4 py-2 bg-[#6c5ce7] text-white rounded-lg text-sm font-medium disabled:opacity-50 transition"
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Zapisz'}
+              </button>
+              <button
+                onClick={() => setShowAddTx(false)}
+                className="px-4 py-2 text-[#999] hover:text-[#ededed] text-sm transition"
+              >
+                Anuluj
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Transaction List */}
+        <div className="divide-y divide-[#2a2a35]">
+          {filteredTransactions.length === 0 ? (
+            <div className="p-8 text-center">
+              <p className="text-[#999] text-sm">Brak transakcji. Dodaj pierwszą!</p>
+            </div>
+          ) : (
+            filteredTransactions.map(tx => {
+              const cat = tx.category as Category | undefined
+              // Find parent name
+              const parentCat = categories.find(c =>
+                c.id === cat?.parent_id || c.children.some(ch => ch.id === cat?.id)
+              )
+
+              if (editingTxId === tx.id) {
+                return (
+                  <div key={tx.id} className="p-4 bg-[#1e1e24] space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-[#999] mb-1">Kategoria</label>
+                        <select
+                          value={editTxCategoryId}
+                          onChange={(e) => setEditTxCategoryId(e.target.value)}
+                          className="w-full px-3 py-2 bg-[#141418] border border-[#6c5ce7] rounded-lg text-sm text-[#ededed] focus:outline-none"
+                        >
+                          {categories.filter(c => c.type === activeTab).map(parent => (
+                            <optgroup key={parent.id} label={parent.name}>
+                              {parent.children.map(child => (
+                                <option key={child.id} value={child.id}>{child.name}</option>
+                              ))}
+                              {parent.children.length === 0 && (
+                                <option value={parent.id}>{parent.name}</option>
+                              )}
+                            </optgroup>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-[#999] mb-1">Kwota</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={editTxAmount}
+                          onChange={(e) => setEditTxAmount(e.target.value)}
+                          className="w-full px-3 py-2 bg-[#141418] border border-[#6c5ce7] rounded-lg text-sm text-[#ededed] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-[#999] mb-1">Data</label>
+                        <input
+                          type="date"
+                          value={editTxDate}
+                          onChange={(e) => setEditTxDate(e.target.value)}
+                          className="w-full px-3 py-2 bg-[#141418] border border-[#6c5ce7] rounded-lg text-sm text-[#ededed] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-[#999] mb-1">Opis</label>
+                        <input
+                          type="text"
+                          value={editTxDescription}
+                          onChange={(e) => setEditTxDescription(e.target.value)}
+                          className="w-full px-3 py-2 bg-[#141418] border border-[#6c5ce7] rounded-lg text-sm text-[#ededed] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleEditTransaction(tx.id)}
+                        disabled={saving}
+                        className="px-4 py-2 bg-[#6c5ce7] text-white rounded-lg text-sm font-medium disabled:opacity-50"
+                      >
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Zapisz'}
+                      </button>
+                      <button
+                        onClick={() => setEditingTxId(null)}
+                        className="px-4 py-2 text-[#999] hover:text-[#ededed] text-sm"
+                      >
+                        Anuluj
+                      </button>
+                    </div>
+                  </div>
+                )
+              }
+
+              return (
+                <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-[#1e1e24] transition group">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3">
+                      <div>
+                        <p className="text-sm font-medium text-[#ededed]">
+                          {cat?.name || 'Brak kategorii'}
+                        </p>
+                        {parentCat && (
+                          <p className="text-xs text-[#666]">{parentCat.name}</p>
+                        )}
+                      </div>
+                    </div>
+                    {tx.description && (
+                      <p className="text-xs text-[#666] mt-1">{tx.description}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-[#ededed]">
+                        {Number(tx.amount).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} zł
+                      </p>
+                      <p className="text-xs text-[#666]">
+                        {new Date(tx.date).toLocaleDateString('pl-PL')}
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition">
+                      <button
+                        onClick={() => startEditTx(tx)}
+                        className="p-1.5 hover:bg-[#2a2a35] rounded-lg"
+                      >
+                        <Edit2 className="w-3.5 h-3.5 text-[#666]" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTransaction(tx.id)}
+                        className="p-1.5 hover:bg-[#2a2a35] rounded-lg"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-[#e17055]" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
       </div>
     </div>
   )
@@ -230,7 +646,7 @@ function SummaryCard({
     <div className="bg-[#141418] rounded-lg border border-[#2a2a35] p-6">
       <p className="text-sm font-medium text-[#999] mb-2">{title}</p>
       <p className={`text-2xl font-bold ${color}`}>
-        {amount.toLocaleString('pl-PL')} zł
+        {amount.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł
       </p>
     </div>
   )

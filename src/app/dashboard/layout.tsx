@@ -58,6 +58,7 @@ export default function DashboardLayout({
     { href: `/dashboard/year/${currentYear}`, label: 'Rok ' + currentYear, icon: BarChart3 },
     { href: '/dashboard/accounts', label: 'Konta', icon: Wallet },
     { href: '/dashboard/import', label: 'Import CSV', icon: Upload },
+    { href: '/dashboard/import-invoices', label: 'Import faktur', icon: FileText },
     { href: '/dashboard/documents', label: 'Dokumenty', icon: FileText },
     { href: '/dashboard/scan', label: 'Skanuj paragon', icon: Camera },
     { href: '/dashboard/categories', label: 'Kategorie', icon: Tags },
@@ -75,6 +76,7 @@ export default function DashboardLayout({
     { href: `/dashboard/year/${currentYear}`, label: 'Widok roczny', icon: BarChart3 },
     { href: '/dashboard/accounts', label: 'Konta', icon: Wallet },
     { href: '/dashboard/import', label: 'Import CSV', icon: Upload },
+    { href: '/dashboard/import-invoices', label: 'Import faktur', icon: FileText },
     { href: '/dashboard/documents', label: 'Dokumenty', icon: FileText },
     { href: '/dashboard/categories', label: 'Kategorie', icon: Tags },
   ]

@@ -6,13 +6,13 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 })
 
-const SYSTEM_PROMPT = `Jeste\u015b ekspertem OCR wyspecjalizowanym w rozpoznawaniu polskich paragon\u00f3w i faktur.
-Analizuj przys\u0142ane zdj\u0119cie i wyodr\u0119bnij dane w formacie JSON.
+const SYSTEM_PROMPT = `Jesteś ekspertem OCR wyspecjalizowanym w rozpoznawaniu polskich paragonów i faktur.
+Analizuj przysłane zdjęcie/dokument i wyodrębnij dane w formacie JSON.
 
-Zwr\u00f3\u0107 TYLKO poprawny JSON (bez markdown, bez \`\`\`json):
+Zwróć TYLKO poprawny JSON (bez markdown, bez \`\`\`json):
 {
   "vendor_name": "nazwa sprzedawcy/sklepu",
-  "vendor_nip": "NIP sprzedawcy je\u015bli widoczny, lub null",
+  "vendor_nip": "NIP sprzedawcy jeśli widoczny, lub null",
   "date": "YYYY-MM-DD",
   "total_amount": 123.45,
   "items": [
@@ -25,10 +25,12 @@ Zwr\u00f3\u0107 TYLKO poprawny JSON (bez markdown, bez \`\`\`json):
 Zasady:
 - Kwoty zawsze jako liczby (nie stringi)
 - Data w formacie ISO (YYYY-MM-DD)
-- Je\u015bli nie mo\u017cesz odczyta\u0107 warto\u015bci, ustaw null
-- confidence: 0.0-1.0 (pewno\u015b\u0107 odczytu)
-- suggested_category: najlepsza kategoria na podstawie nazwy sklepu i produkt\u00f3w
+- Jeśli nie możesz odczytać wartości, ustaw null
+- confidence: 0.0-1.0 (pewność odczytu)
+- suggested_category: najlepsza kategoria na podstawie nazwy sklepu i produktów
 `
+
+type ImageMediaType = 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif'
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,10 +40,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Nie zalogowano' }, { status: 401 })
     }
 
-    // Check API key
     if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'placeholder') {
       return NextResponse.json(
-        { error: 'Klucz API Anthropic nie jest skonfigurowany. Ustaw ANTHROPIC_API_KEY w zmiennych \u015brodowiskowych.' },
+        { error: 'Klucz API Anthropic nie jest skonfigurowany. Ustaw ANTHROPIC_API_KEY w zmiennych środowiskowych.' },
         { status: 500 }
       )
     }
@@ -53,15 +54,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Brak pliku' }, { status: 400 })
     }
 
-    // Convert to base64
     const bytes = await file.arrayBuffer()
     const base64 = Buffer.from(bytes).toString('base64')
+    const isPDF = file.type === 'application/pdf'
 
-    // Determine media type
-    let mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' = 'image/jpeg'
-    if (file.type === 'image/png') mediaType = 'image/png'
-    else if (file.type === 'image/webp') mediaType = 'image/webp'
-    else if (file.type === 'image/gif') mediaType = 'image/gif'
+    // Build content block based on file type
+    let fileContent: Anthropic.Messages.ContentBlockParam
+    if (isPDF) {
+      fileContent = {
+        type: 'document',
+        source: {
+          type: 'base64',
+          media_type: 'application/pdf',
+          data: base64,
+        },
+      }
+    } else {
+      let mediaType: ImageMediaType = 'image/jpeg'
+      if (file.type === 'image/png') mediaType = 'image/png'
+      else if (file.type === 'image/webp') mediaType = 'image/webp'
+      else if (file.type === 'image/gif') mediaType = 'image/gif'
+
+      fileContent = {
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: mediaType,
+          data: base64,
+        },
+      }
+    }
 
     // Call Claude Vision
     const message = await anthropic.messages.create({
@@ -71,17 +93,10 @@ export async function POST(request: NextRequest) {
         {
           role: 'user',
           content: [
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: mediaType,
-                data: base64,
-              },
-            },
+            fileContent,
             {
               type: 'text',
-              text: 'Rozpoznaj dane z tego paragonu/faktury. Zwr\u00f3\u0107 dane w formacie JSON zgodnie z instrukcj\u0105.',
+              text: 'Rozpoznaj dane z tego paragonu/faktury. Zwróć dane w formacie JSON zgodnie z instrukcją.',
             },
           ],
         },
@@ -97,12 +112,11 @@ export async function POST(request: NextRequest) {
 
     let ocrResult
     try {
-      // Try to parse JSON, handling possible markdown wrapping
       const jsonStr = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
       ocrResult = JSON.parse(jsonStr)
     } catch {
       return NextResponse.json(
-        { error: 'Nie uda\u0142o si\u0119 przetworzy\u0107 odpowiedzi OCR', raw: responseText },
+        { error: 'Nie udało się przetworzyć odpowiedzi OCR', raw: responseText },
         { status: 500 }
       )
     }
@@ -118,7 +132,6 @@ export async function POST(request: NextRequest) {
 
     let filePath = fileName
     if (uploadError) {
-      // If storage bucket doesn't exist or upload fails, just store the path reference
       console.warn('Storage upload failed:', uploadError.message)
       filePath = `local/${fileName}`
     }
@@ -152,9 +165,9 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('OCR Error:', error)
-    const message = error instanceof Error ? error.message : 'Nieznany b\u0142\u0105d'
+    const message = error instanceof Error ? error.message : 'Nieznany błąd'
     return NextResponse.json(
-      { error: `B\u0142\u0105d OCR: ${message}` },
+      { error: `Błąd OCR: ${message}` },
       { status: 500 }
     )
   }

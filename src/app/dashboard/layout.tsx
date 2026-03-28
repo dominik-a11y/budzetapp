@@ -83,8 +83,8 @@ export default function DashboardLayout({
     <div className="flex h-screen bg-[#0a0a0a]">
       {/* Sidebar */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-40 w-64 bg-[#141418] border-r border-[#2a2a35] transition-transform duration-300 md:translate-x-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed md:static inset-y-0 left-0 z-40 w-64 bg-[#141418] border-r border-[#2a2a35] transition-transform duration-300 ${
+          sidebarOpen ? 'translate-x-0' : 'max-md:-translate-x-full'
         }`}
       >
         <div className="flex flex-col h-full">

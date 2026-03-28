@@ -123,7 +123,7 @@ export default function MonthPage() {
         subcategories: subs,
       }
     })
-    .filter(g => g.planned > 0 || g.actual > 0 || g.subcategories.length > 0)
+    .filter(g => g.subcategories.length > 0 || g.planned > 0 || g.actual > 0)
 
   const totalPlanned = categoryGroups.reduce((s, g) => s + g.planned, 0)
   const totalActual = categoryGroups.reduce((s, g) => s + g.actual, 0)
@@ -303,8 +303,8 @@ export default function MonthPage() {
       <div className="space-y-4">
         {categoryGroups.length === 0 && (
           <div className="bg-[#141418] rounded-lg border border-[#2a2a35] p-8 text-center">
-            <p className="text-[#999] mb-2">Brak kategorii z planem lub transakcjami.</p>
-            <p className="text-[#666] text-sm">Ustaw planowane kwoty, aby śledzić budżet.</p>
+            <p className="text-[#999] mb-2">Brak kategorii dla tego typu.</p>
+            <p className="text-[#666] text-sm">Dodaj kategorie w zakładce Kategorie, aby móc ustawić plan i dodawać transakcje.</p>
           </div>
         )}
 
@@ -379,9 +379,16 @@ export default function MonthPage() {
                                   setEditingPlannedId(sub.id)
                                   setEditPlannedValue(String(sub.planned))
                                 }}
-                                className="text-xs text-[#666] hover:text-[#6c5ce7] transition"
+                                className={`text-xs transition ${
+                                  sub.planned > 0
+                                    ? 'text-[#666] hover:text-[#6c5ce7]'
+                                    : 'text-[#6c5ce7] hover:text-[#a29bfe] font-medium'
+                                }`}
                               >
-                                {sub.actual.toLocaleString('pl-PL')} / {sub.planned.toLocaleString('pl-PL')} zł
+                                {sub.planned > 0
+                                  ? `${sub.actual.toLocaleString('pl-PL')} / ${sub.planned.toLocaleString('pl-PL')} zł`
+                                  : '+ Ustaw plan'
+                                }
                               </button>
                             )}
                           </div>

@@ -91,7 +91,7 @@ export default function DashboardLayout({
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="p-6 border-b border-[#2a2a35]">
+          <div className="p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] border-b border-[#2a2a35]">
             <Link
               href="/dashboard"
               className="flex items-center space-x-2 hover:opacity-80 transition"
@@ -161,7 +161,7 @@ export default function DashboardLayout({
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen md:ml-0">
         {/* Header */}
-        <header className="bg-[#141418] border-b border-[#2a2a35] px-6 py-4 flex items-center justify-between">
+        <header className="bg-[#141418] border-b border-[#2a2a35] px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] flex items-center justify-between">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="md:hidden p-2 hover:bg-[#1e1e24] rounded-lg transition"
@@ -219,7 +219,7 @@ export default function DashboardLayout({
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#141418] border-t border-[#2a2a35] z-40">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#141418] border-t border-[#2a2a35] z-40 pb-[env(safe-area-inset-bottom)]">
         {/* More menu popup */}
         {moreMenuOpen && (
           <div className="absolute bottom-full right-0 left-0 bg-[#141418] border-t border-[#2a2a35] shadow-lg">

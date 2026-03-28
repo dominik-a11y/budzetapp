@@ -16,6 +16,8 @@ import {
   LogOut,
   Menu,
   X,
+  Home,
+  Upload,
 } from 'lucide-react'
 
 export default function DashboardLayout({
@@ -50,9 +52,10 @@ export default function DashboardLayout({
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: `/dashboard/month/${currentYear}/${currentMonth}`, label: 'Bie\u017c\u0105cy miesi\u0105c', icon: Calendar },
+    { href: `/dashboard/month/${currentYear}/${currentMonth}`, label: 'Bieżący miesiąc', icon: Calendar },
     { href: `/dashboard/year/${currentYear}`, label: 'Rok ' + currentYear, icon: BarChart3 },
     { href: '/dashboard/accounts', label: 'Konta', icon: Wallet },
+    { href: '/dashboard/import', label: 'Import CSV', icon: Upload },
     { href: '/dashboard/documents', label: 'Dokumenty', icon: FileText },
     { href: '/dashboard/scan', label: 'Skanuj paragon', icon: Camera },
     { href: '/dashboard/categories', label: 'Kategorie', icon: Tags },
@@ -61,7 +64,7 @@ export default function DashboardLayout({
 
   const mobileNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: `/dashboard/month/${currentYear}/${currentMonth}`, label: 'Miesi\u0105c', icon: Calendar },
+    { href: `/dashboard/month/${currentYear}/${currentMonth}`, label: 'Miesiąc', icon: Calendar },
     { href: '/dashboard/scan', label: 'Skanuj', icon: Camera },
     { href: '/dashboard/settings', label: 'Ustawienia', icon: Settings },
   ]
@@ -96,7 +99,7 @@ export default function DashboardLayout({
                   />
                 </svg>
               </div>
-              <span className="font-bold text-lg text-[#ededed]">Bud\u017cetApp</span>
+              <span className="font-bold text-lg text-[#ededed]">BudżetApp</span>
             </Link>
           </div>
 
@@ -137,7 +140,7 @@ export default function DashboardLayout({
               className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-[#999] hover:text-[#e17055] hover:bg-[#1e1e24] transition"
             >
               <LogOut className="w-5 h-5" />
-              <span className="text-sm font-medium">Wyloguj si\u0119</span>
+              <span className="text-sm font-medium">Wyloguj się</span>
             </button>
           </div>
         </div>
@@ -159,8 +162,28 @@ export default function DashboardLayout({
           </button>
 
           <div className="hidden md:flex items-center space-x-3">
+            {pathname !== '/dashboard' && (
+              <Link
+                href="/dashboard"
+                className="flex items-center space-x-1.5 text-[#999] hover:text-[#ededed] transition text-sm mr-2"
+              >
+                <Home className="w-4 h-4" />
+                <span>Główna</span>
+              </Link>
+            )}
             <MonthNavigator currentYear={currentYear} currentMonth={currentMonth} />
           </div>
+
+          {/* Mobile: back to dashboard */}
+          {pathname !== '/dashboard' && (
+            <Link
+              href="/dashboard"
+              className="md:hidden flex items-center space-x-1 text-[#999] hover:text-[#ededed] transition text-sm"
+            >
+              <Home className="w-4 h-4" />
+              <span>Główna</span>
+            </Link>
+          )}
 
           <div className="flex items-center space-x-4">
             <Link
@@ -216,8 +239,8 @@ export default function DashboardLayout({
 }
 
 const MONTH_NAMES = [
-  'Stycze\u0144', 'Luty', 'Marzec', 'Kwiecie\u0144', 'Maj', 'Czerwiec',
-  'Lipiec', 'Sierpie\u0144', 'Wrzesie\u0144', 'Pa\u017adziernik', 'Listopad', 'Grudzie\u0144',
+  'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
+  'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień',
 ]
 
 function MonthNavigator({ currentYear, currentMonth }: { currentYear: number; currentMonth: number }) {

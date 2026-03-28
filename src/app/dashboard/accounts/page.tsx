@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Wallet, Plus, Loader2, X, Trash2 } from 'lucide-react'
+import { Wallet, Plus, Loader2, X, Trash2, Upload } from 'lucide-react'
+import Link from 'next/link'
 import { getAccounts, createAccount, deleteAccount } from '@/lib/actions/accounts'
 import type { Account, AccountType } from '@/types/budget'
 
@@ -88,13 +89,22 @@ export default function AccountsPage() {
           <h1 className="text-3xl font-bold text-[#ededed]">Konta</h1>
           <p className="text-[#999] mt-1">Zarządzaj swoimi kontami</p>
         </div>
-        <button
-          onClick={() => setShowAdd(true)}
-          className="flex items-center space-x-2 bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] hover:from-[#5a4bc4] hover:to-[#9189d8] text-white font-semibold px-4 py-2.5 rounded-lg transition"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Dodaj konto</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          <Link
+            href="/dashboard/import"
+            className="flex items-center space-x-2 bg-[#1e1e24] hover:bg-[#2a2a35] text-[#ededed] font-semibold px-4 py-2.5 rounded-lg border border-[#2a2a35] transition"
+          >
+            <Upload className="w-5 h-5" />
+            <span>Import CSV</span>
+          </Link>
+          <button
+            onClick={() => setShowAdd(true)}
+            className="flex items-center space-x-2 bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] hover:from-[#5a4bc4] hover:to-[#9189d8] text-white font-semibold px-4 py-2.5 rounded-lg transition"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Dodaj konto</span>
+          </button>
+        </div>
       </div>
 
       {error && (

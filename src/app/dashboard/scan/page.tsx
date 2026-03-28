@@ -58,7 +58,7 @@ export default function ScanPage() {
         setCameraActive(true)
       }
     } catch {
-      setError('Nie mo\u017cna uzyska\u0107 dost\u0119pu do kamery')
+      setError('Nie można uzyskać dostępu do kamery')
     }
   }
 
@@ -121,7 +121,7 @@ export default function ScanPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'B\u0142\u0105d OCR')
+        throw new Error(data.error || 'Błąd OCR')
       }
 
       setOcrResult(data)
@@ -139,7 +139,7 @@ export default function ScanPage() {
 
       setStep('result')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'B\u0142\u0105d podczas analizy obrazu')
+      setError(err instanceof Error ? err.message : 'Błąd podczas analizy obrazu')
     } finally {
       setLoading(false)
     }
@@ -147,7 +147,7 @@ export default function ScanPage() {
 
   const handleApprove = async () => {
     if (!ocrResult || !selectedCategoryId || !editedAmount || !editedDate) {
-      setError('Wype\u0142nij wszystkie wymagane pola (kategoria, kwota, data)')
+      setError('Wypełnij wszystkie wymagane pola (kategoria, kwota, data)')
       return
     }
 
@@ -169,7 +169,7 @@ export default function ScanPage() {
       // Navigate to the month view
       router.push(`/dashboard/month/${date.getFullYear()}/${date.getMonth() + 1}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'B\u0142\u0105d podczas zapisywania transakcji')
+      setError(err instanceof Error ? err.message : 'Błąd podczas zapisywania transakcji')
     } finally {
       setLoading(false)
     }
@@ -188,7 +188,7 @@ export default function ScanPage() {
           <div>
             <h1 className="text-3xl font-bold text-[#ededed] mb-2">Skanuj paragon</h1>
             <p className="text-[#999]">
-              Zr\u00f3b zdj\u0119cie paragonu lub faktury, a Claude automatycznie rozpozna dane
+              Zrób zdjęcie paragonu lub faktury, a Claude automatycznie rozpozna dane
             </p>
           </div>
 
@@ -219,7 +219,7 @@ export default function ScanPage() {
                 className="flex items-center justify-center space-x-2 bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] hover:from-[#5a4bc4] hover:to-[#9189d8] text-white font-semibold py-3 rounded-lg transition"
               >
                 <Camera className="w-5 h-5" />
-                <span>Zr\u00f3b zdj\u0119cie</span>
+                <span>Zrób zdjęcie</span>
               </button>
             ) : (
               <button
@@ -227,7 +227,7 @@ export default function ScanPage() {
                 className="flex items-center justify-center space-x-2 bg-gradient-to-r from-[#00b894] to-[#55efc4] hover:opacity-90 text-white font-semibold py-3 rounded-lg transition"
               >
                 <Camera className="w-5 h-5" />
-                <span>Uchwy\u0107 obraz</span>
+                <span>Uchwyć obraz</span>
               </button>
             )}
 
@@ -255,8 +255,8 @@ export default function ScanPage() {
       {step === 'preview' && imageSrc && (
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold text-[#ededed] mb-2">Podgl\u0105d obrazu</h1>
-            <p className="text-[#999]">Zweryfikuj obraz przed analiz\u0105</p>
+            <h1 className="text-3xl font-bold text-[#ededed] mb-2">Podgląd obrazu</h1>
+            <p className="text-[#999]">Zweryfikuj obraz przed analizą</p>
           </div>
 
           <div className="bg-[#141418] rounded-lg border border-[#2a2a35] overflow-hidden">
@@ -302,7 +302,7 @@ export default function ScanPage() {
           <div>
             <h1 className="text-3xl font-bold text-[#ededed] mb-2">Rozpoznane dane</h1>
             <p className="text-[#999]">
-              Pewno\u015b\u0107 rozpoznania: {(ocrResult.confidence * 100).toFixed(0)}%
+              Pewność rozpoznania: {(ocrResult.confidence * 100).toFixed(0)}%
             </p>
           </div>
 
@@ -332,7 +332,7 @@ export default function ScanPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#999] mb-1">Kwota (z\u0142)</label>
+                <label className="block text-sm font-medium text-[#999] mb-1">Kwota (zł)</label>
                 <input
                   type="number"
                   step="0.01"
@@ -350,7 +350,7 @@ export default function ScanPage() {
                 onChange={(e) => setSelectedCategoryId(e.target.value)}
                 className="w-full px-4 py-2.5 bg-[#1e1e24] border border-[#2a2a35] rounded-lg text-[#ededed] focus:outline-none focus:border-[#6c5ce7]"
               >
-                <option value="">Wybierz kategori\u0119...</option>
+                <option value="">Wybierz kategorię...</option>
                 {categories.filter(c => c.type === 'expense').map(parent => (
                   <optgroup key={parent.id} label={parent.name}>
                     {parent.children.map(child => (
@@ -382,7 +382,7 @@ export default function ScanPage() {
                     >
                       <span className="text-sm text-[#999]">{item.name}</span>
                       <span className="text-sm font-semibold text-[#ededed]">
-                        {Number(item.price).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} z\u0142
+                        {Number(item.price).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} zł
                       </span>
                     </div>
                   ))}
@@ -402,7 +402,7 @@ export default function ScanPage() {
               ) : (
                 <>
                   <Check className="w-5 h-5" />
-                  <span>Zatwierd\u017a i zapisz</span>
+                  <span>Zatwierdź i zapisz</span>
                 </>
               )}
             </button>

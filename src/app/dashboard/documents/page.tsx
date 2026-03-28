@@ -18,7 +18,7 @@ export default function DocumentsPage() {
       const docs = await getDocuments()
       setDocuments(docs)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'B\u0142\u0105d \u0142adowania dokument\u00f3w')
+      setError(err instanceof Error ? err.message : 'Błąd ładowania dokumentów')
     } finally {
       setLoading(false)
     }
@@ -33,7 +33,7 @@ export default function DocumentsPage() {
       await deleteDocument(id)
       await loadDocuments()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'B\u0142\u0105d usuwania dokumentu')
+      setError(err instanceof Error ? err.message : 'Błąd usuwania dokumentu')
     }
   }
 
@@ -62,7 +62,7 @@ export default function DocumentsPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-[#ededed] mb-2">Dokumenty</h1>
-        <p className="text-[#999]">Archiwum skanowanych paragon\u00f3w i faktur</p>
+        <p className="text-[#999]">Archiwum skanowanych paragonów i faktur</p>
       </div>
 
       {error && (
@@ -87,7 +87,7 @@ export default function DocumentsPage() {
         <div className="flex flex-wrap gap-2">
           <FilterChip label="Wszystkie" active={statusFilter === 'all'} onClick={() => setStatusFilter('all')} />
           <FilterChip label={`Przetworzone (${processedCount})`} active={statusFilter === 'processed'} onClick={() => setStatusFilter('processed')} />
-          <FilterChip label={`Oczekuj\u0105ce (${pendingCount})`} active={statusFilter === 'pending'} onClick={() => setStatusFilter('pending')} />
+          <FilterChip label={`Oczekujące (${pendingCount})`} active={statusFilter === 'pending'} onClick={() => setStatusFilter('pending')} />
         </div>
       </div>
 
@@ -95,19 +95,19 @@ export default function DocumentsPage() {
       <div className="bg-[#141418] rounded-lg border border-[#2a2a35] p-4">
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <p className="text-xs font-medium text-[#666] uppercase">Dokument\u00f3w</p>
+            <p className="text-xs font-medium text-[#666] uppercase">Dokumentów</p>
             <p className="text-2xl font-bold text-[#ededed]">{filteredDocuments.length}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-[#666] uppercase">\u0141\u0105czna kwota</p>
+            <p className="text-xs font-medium text-[#666] uppercase">Łączna kwota</p>
             <p className="text-2xl font-bold text-[#a29bfe]">
-              {totalAmount.toLocaleString('pl-PL', { minimumFractionDigits: 2 })} z\u0142
+              {totalAmount.toLocaleString('pl-PL', { minimumFractionDigits: 2 })} zł
             </p>
           </div>
           <div>
-            <p className="text-xs font-medium text-[#666] uppercase">\u015arednia</p>
+            <p className="text-xs font-medium text-[#666] uppercase">Średnia</p>
             <p className="text-2xl font-bold text-[#74b9ff]">
-              {(totalAmount / (filteredDocuments.length || 1)).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} z\u0142
+              {(totalAmount / (filteredDocuments.length || 1)).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} zł
             </p>
           </div>
         </div>
@@ -123,8 +123,8 @@ export default function DocumentsPage() {
       ) : (
         <div className="text-center py-12">
           <FileText className="w-16 h-16 text-[#2a2a35] mx-auto mb-4" />
-          <p className="text-[#666] mb-2">Brak dokument\u00f3w</p>
-          <p className="text-[#999] text-sm">Skanuj paragon, aby doda\u0107 nowy dokument</p>
+          <p className="text-[#666] mb-2">Brak dokumentów</p>
+          <p className="text-[#999] text-sm">Skanuj paragon, aby dodać nowy dokument</p>
         </div>
       )}
     </div>
@@ -164,7 +164,7 @@ function DocumentCard({
   const statusLabels: Record<string, string> = {
     processed: 'Przetworzony',
     pending: 'Oczekuje',
-    error: 'B\u0142\u0105d',
+    error: 'Błąd',
   }
   const statusColors: Record<string, string> = {
     processed: 'bg-[#00b894]',
@@ -208,7 +208,7 @@ function DocumentCard({
             </p>
             {doc.ocr_total != null && (
               <p className="text-lg font-bold text-[#a29bfe]">
-                {Number(doc.ocr_total).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} z\u0142
+                {Number(doc.ocr_total).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} zł
               </p>
             )}
           </div>

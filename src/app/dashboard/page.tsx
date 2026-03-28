@@ -80,7 +80,7 @@ export default function DashboardPage() {
         }
         setDailyTrend(trend)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'B\u0142\u0105d \u0142adowania danych')
+        setError(err instanceof Error ? err.message : 'Błąd ładowania danych')
       } finally {
         setLoading(false)
       }
@@ -105,8 +105,8 @@ export default function DashboardPage() {
   }
 
   const MONTH_NAMES = [
-    'Stycze\u0144', 'Luty', 'Marzec', 'Kwiecie\u0144', 'Maj', 'Czerwiec',
-    'Lipiec', 'Sierpie\u0144', 'Wrzesie\u0144', 'Pa\u017adziernik', 'Listopad', 'Grudzie\u0144',
+    'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
+    'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień',
   ]
   const monthName = MONTH_NAMES[currentMonth - 1]
   const hasData = summary.total_income > 0 || summary.total_expenses > 0
@@ -117,7 +117,7 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#ededed]">{monthName} {currentYear}</h1>
-          <p className="text-[#999] text-sm">Przegl\u0105d bie\u017c\u0105cego miesi\u0105ca</p>
+          <p className="text-[#999] text-sm">Przegląd bieżącego miesiąca</p>
         </div>
         <div className="flex items-center space-x-3">
           <Link
@@ -125,7 +125,7 @@ export default function DashboardPage() {
             className="flex items-center space-x-2 bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] hover:from-[#5a4bc4] hover:to-[#9189d8] text-white font-semibold px-4 py-2.5 rounded-lg transition text-sm"
           >
             <Plus className="w-4 h-4" />
-            <span>Dodaj transakcj\u0119</span>
+            <span>Dodaj transakcję</span>
           </Link>
           <Link
             href="/dashboard/scan"
@@ -141,7 +141,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard title="Przychody" amount={summary.total_income} icon={TrendingUp} color="text-[#00b894]" />
         <StatCard title="Wydatki" amount={summary.total_expenses} icon={TrendingDown} color="text-[#e17055]" />
-        <StatCard title="Oszcz\u0119dno\u015bci" amount={summary.total_savings} icon={PiggyBank} color="text-[#74b9ff]" />
+        <StatCard title="Oszczędności" amount={summary.total_savings} icon={PiggyBank} color="text-[#74b9ff]" />
         <StatCard
           title="Zostaje"
           amount={summary.remaining}
@@ -156,7 +156,7 @@ export default function DashboardPage() {
             <Calendar className="w-8 h-8 text-[#6c5ce7]" />
           </div>
           <div>
-            <p className="text-[#ededed] font-semibold mb-1">Brak transakcji w tym miesi\u0105cu</p>
+            <p className="text-[#ededed] font-semibold mb-1">Brak transakcji w tym miesiącu</p>
             <p className="text-[#666] text-sm mb-4">
               Zacznij od dodania transakcji lub zeskanowania paragonu.
             </p>
@@ -167,7 +167,7 @@ export default function DashboardPage() {
               className="flex items-center space-x-2 bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] hover:from-[#5a4bc4] hover:to-[#9189d8] text-white font-semibold px-6 py-3 rounded-lg transition text-sm"
             >
               <Plus className="w-4 h-4" />
-              <span>Dodaj transakcj\u0119</span>
+              <span>Dodaj transakcję</span>
             </Link>
             <Link
               href="/dashboard/scan"
@@ -196,7 +196,7 @@ export default function DashboardPage() {
               href={`/dashboard/month/${currentYear}/${currentMonth}`}
               className="text-xs text-[#6c5ce7] hover:text-[#a29bfe] transition"
             >
-              Szczeg\u00f3\u0142y &rarr;
+              Szczegóły &rarr;
             </Link>
           </div>
           <div className="space-y-4">
@@ -230,7 +230,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-[#ededed]">
-                      {Number(tx.amount).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} z\u0142
+                      {Number(tx.amount).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} zł
                     </p>
                     <p className="text-xs text-[#666]">
                       {new Date(tx.date).toLocaleDateString('pl-PL')}
@@ -266,7 +266,7 @@ export default function DashboardPage() {
                     borderRadius: '8px',
                     color: '#ededed',
                   }}
-                  formatter={(value: number) => [`${value} z\u0142`, 'Wydatki']}
+                  formatter={(value: number) => [`${value} zł`, 'Wydatki']}
                 />
                 <Area type="monotone" dataKey="amount" stroke="#6c5ce7" strokeWidth={2} fillOpacity={1} fill="url(#colorAmount)" />
               </AreaChart>
@@ -304,7 +304,7 @@ function StatCard({
         <Icon className={`w-4 h-4 md:w-5 md:h-5 ${color}`} />
       </div>
       <p className="text-lg md:text-2xl font-bold text-[#ededed]">
-        {amount.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} z\u0142
+        {amount.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł
       </p>
     </div>
   )
@@ -331,7 +331,7 @@ function CategoryProgressBar({
       </div>
       <div className="flex items-center justify-between mt-1">
         <span className="text-xs text-[#666]">
-          {category.actual.toLocaleString('pl-PL')} / {category.planned.toLocaleString('pl-PL')} z\u0142
+          {category.actual.toLocaleString('pl-PL')} / {category.planned.toLocaleString('pl-PL')} zł
         </span>
       </div>
     </div>

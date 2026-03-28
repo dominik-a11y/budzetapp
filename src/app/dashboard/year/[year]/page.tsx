@@ -86,7 +86,7 @@ export default function YearPage() {
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <SummaryCard title="Przychody" amount={totalIncome} color="text-[#00b894]" />
         <SummaryCard title="Plan wydatków" amount={totalPlanned} color="text-[#74b9ff]" />
         <SummaryCard title="Wydatki" amount={totalActual} color="text-[#a29bfe]" />
@@ -98,11 +98,11 @@ export default function YearPage() {
       </div>
 
       {/* Monthly Chart */}
-      <div className="bg-[#141418] rounded-lg border border-[#2a2a35] p-6">
-        <h2 className="text-lg font-semibold text-[#ededed] mb-6">
-          Plan vs Realizacja (miesięczny podział)
+      <div className="bg-[#141418] rounded-lg border border-[#2a2a35] p-4 md:p-6">
+        <h2 className="text-base md:text-lg font-semibold text-[#ededed] mb-4 md:mb-6">
+          Plan vs Realizacja
         </h2>
-        <div className="w-full h-80">
+        <div className="w-full h-56 md:h-80">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#2a2a35" />
@@ -127,8 +127,8 @@ export default function YearPage() {
 
       {/* Category Breakdown */}
       {categoryBreakdown.length > 0 && (
-        <div className="bg-[#141418] rounded-lg border border-[#2a2a35] p-6">
-          <h2 className="text-lg font-semibold text-[#ededed] mb-6">
+        <div className="bg-[#141418] rounded-lg border border-[#2a2a35] p-4 md:p-6">
+          <h2 className="text-base md:text-lg font-semibold text-[#ededed] mb-4 md:mb-6">
             Wydatki rocznie po kategoriach
           </h2>
           <div className="space-y-4">
@@ -177,11 +177,11 @@ export default function YearPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#2a2a35] bg-[#1e1e24]">
-                <th className="px-6 py-3 text-left font-semibold text-[#ededed]">Miesiąc</th>
-                <th className="px-6 py-3 text-right font-semibold text-[#ededed]">Przychody</th>
-                <th className="px-6 py-3 text-right font-semibold text-[#ededed]">Plan</th>
-                <th className="px-6 py-3 text-right font-semibold text-[#ededed]">Wydatki</th>
-                <th className="px-6 py-3 text-right font-semibold text-[#ededed]">Różnica</th>
+                <th className="px-3 md:px-6 py-3 text-left font-semibold text-[#ededed]">Miesiąc</th>
+                <th className="px-3 md:px-6 py-3 text-right font-semibold text-[#ededed]">Przychody</th>
+                <th className="hidden md:table-cell px-6 py-3 text-right font-semibold text-[#ededed]">Plan</th>
+                <th className="px-3 md:px-6 py-3 text-right font-semibold text-[#ededed]">Wydatki</th>
+                <th className="px-3 md:px-6 py-3 text-right font-semibold text-[#ededed]">Różnica</th>
               </tr>
             </thead>
             <tbody>
@@ -197,17 +197,17 @@ export default function YearPage() {
                       hasData ? 'hover:bg-[#1e1e24]' : 'opacity-50 hover:bg-[#1e1e24]'
                     }`}
                   >
-                    <td className="px-6 py-3 text-[#ededed] font-medium">{m.monthName}</td>
-                    <td className="px-6 py-3 text-right text-[#00b894]">
+                    <td className="px-3 md:px-6 py-3 text-[#ededed] font-medium">{m.monthName.substring(0, 3)}<span className="hidden md:inline">{m.monthName.substring(3)}</span></td>
+                    <td className="px-3 md:px-6 py-3 text-right text-[#00b894]">
                       {m.income > 0 ? `${m.income.toLocaleString('pl-PL')} zł` : '\u2014'}
                     </td>
-                    <td className="px-6 py-3 text-right text-[#74b9ff]">
+                    <td className="hidden md:table-cell px-6 py-3 text-right text-[#74b9ff]">
                       {m.planned > 0 ? `${m.planned.toLocaleString('pl-PL')} zł` : '\u2014'}
                     </td>
-                    <td className="px-6 py-3 text-right text-[#a29bfe]">
+                    <td className="px-3 md:px-6 py-3 text-right text-[#a29bfe]">
                       {m.actual > 0 ? `${m.actual.toLocaleString('pl-PL')} zł` : '\u2014'}
                     </td>
-                    <td className={`px-6 py-3 text-right font-semibold ${
+                    <td className={`px-3 md:px-6 py-3 text-right font-semibold ${
                       m.planned === 0 && m.actual === 0
                         ? 'text-[#666]'
                         : diff >= 0 ? 'text-[#00b894]' : 'text-[#e17055]'
@@ -222,17 +222,17 @@ export default function YearPage() {
             </tbody>
             <tfoot>
               <tr className="bg-[#1e1e24]">
-                <td className="px-6 py-3 font-bold text-[#ededed]">Razem</td>
-                <td className="px-6 py-3 text-right font-bold text-[#00b894]">
+                <td className="px-3 md:px-6 py-3 font-bold text-[#ededed]">Razem</td>
+                <td className="px-3 md:px-6 py-3 text-right font-bold text-[#00b894]">
                   {totalIncome.toLocaleString('pl-PL')} zł
                 </td>
-                <td className="px-6 py-3 text-right font-bold text-[#74b9ff]">
+                <td className="hidden md:table-cell px-6 py-3 text-right font-bold text-[#74b9ff]">
                   {totalPlanned.toLocaleString('pl-PL')} zł
                 </td>
-                <td className="px-6 py-3 text-right font-bold text-[#a29bfe]">
+                <td className="px-3 md:px-6 py-3 text-right font-bold text-[#a29bfe]">
                   {totalActual.toLocaleString('pl-PL')} zł
                 </td>
-                <td className={`px-6 py-3 text-right font-bold ${
+                <td className={`px-3 md:px-6 py-3 text-right font-bold ${
                   difference >= 0 ? 'text-[#00b894]' : 'text-[#e17055]'
                 }`}>
                   {difference.toLocaleString('pl-PL')} zł
@@ -256,9 +256,9 @@ function SummaryCard({
   color: string
 }) {
   return (
-    <div className="bg-[#141418] rounded-lg border border-[#2a2a35] p-6">
-      <p className="text-sm font-medium text-[#999] mb-2">{title}</p>
-      <p className={`text-2xl font-bold ${color}`}>
+    <div className="bg-[#141418] rounded-lg border border-[#2a2a35] p-4 md:p-6">
+      <p className="text-xs md:text-sm font-medium text-[#999] mb-1 md:mb-2">{title}</p>
+      <p className={`text-lg md:text-2xl font-bold ${color}`}>
         {amount.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł
       </p>
     </div>

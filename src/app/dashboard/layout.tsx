@@ -18,6 +18,7 @@ import {
   X,
   Home,
   Upload,
+  MoreHorizontal,
 } from 'lucide-react'
 
 export default function DashboardLayout({
@@ -26,6 +27,7 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const router = useRouter()
   const pathname = usePathname()
@@ -63,10 +65,18 @@ export default function DashboardLayout({
   ]
 
   const mobileNavItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/dashboard', label: 'Główna', icon: LayoutDashboard },
     { href: `/dashboard/month/${currentYear}/${currentMonth}`, label: 'Miesiąc', icon: Calendar },
     { href: '/dashboard/scan', label: 'Skanuj', icon: Camera },
     { href: '/dashboard/settings', label: 'Ustawienia', icon: Settings },
+  ]
+
+  const moreMenuItems = [
+    { href: `/dashboard/year/${currentYear}`, label: 'Widok roczny', icon: BarChart3 },
+    { href: '/dashboard/accounts', label: 'Konta', icon: Wallet },
+    { href: '/dashboard/import', label: 'Import CSV', icon: Upload },
+    { href: '/dashboard/documents', label: 'Dokumenty', icon: FileText },
+    { href: '/dashboard/categories', label: 'Kategorie', icon: Tags },
   ]
 
   return (
@@ -193,9 +203,12 @@ export default function DashboardLayout({
               <Camera className="w-4 h-4" />
               <span>Skanuj</span>
             </Link>
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#6c5ce7] to-[#a29bfe] flex items-center justify-center text-white font-semibold text-sm cursor-pointer hover:opacity-80 transition">
+            <Link
+              href="/dashboard/settings"
+              className="w-10 h-10 rounded-full bg-gradient-to-br from-[#6c5ce7] to-[#a29bfe] flex items-center justify-center text-white font-semibold text-sm hover:opacity-80 transition"
+            >
               {userEmail ? userEmail.charAt(0).toUpperCase() : 'U'}
-            </div>
+            </Link>
           </div>
         </header>
 
@@ -205,6 +218,33 @@ export default function DashboardLayout({
 
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#141418] border-t border-[#2a2a35] z-40">
+        {/* More menu popup */}
+        {moreMenuOpen && (
+          <div className="absolute bottom-full right-0 left-0 bg-[#141418] border-t border-[#2a2a35] shadow-lg">
+            <div className="grid grid-cols-3 gap-1 p-3">
+              {moreMenuItems.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.href ||
+                  (item.href !== '/dashboard' && pathname.startsWith(item.href))
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMoreMenuOpen(false)}
+                    className={`flex flex-col items-center justify-center py-3 px-2 rounded-lg transition ${
+                      isActive ? 'text-[#6c5ce7] bg-[#6c5ce7]/10' : 'text-[#999] hover:text-[#6c5ce7] hover:bg-[#1e1e24]'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5 mb-1" />
+                    <span className="text-xs">{item.label}</span>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-around">
           {mobileNavItems.map((item) => {
             const Icon = item.icon
@@ -215,6 +255,7 @@ export default function DashboardLayout({
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setMoreMenuOpen(false)}
                 className={`flex-1 flex flex-col items-center justify-center py-3 transition ${
                   isActive ? 'text-[#6c5ce7]' : 'text-[#999] hover:text-[#6c5ce7]'
                 }`}
@@ -224,8 +265,27 @@ export default function DashboardLayout({
               </Link>
             )
           })}
+
+          {/* More button */}
+          <button
+            onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+            className={`flex-1 flex flex-col items-center justify-center py-3 transition ${
+              moreMenuOpen ? 'text-[#6c5ce7]' : 'text-[#999] hover:text-[#6c5ce7]'
+            }`}
+          >
+            <MoreHorizontal className="w-5 h-5 mb-1" />
+            <span className="text-xs">Więcej</span>
+          </button>
         </div>
       </nav>
+
+      {/* More menu overlay */}
+      {moreMenuOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-30"
+          onClick={() => setMoreMenuOpen(false)}
+        />
+      )}
 
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (

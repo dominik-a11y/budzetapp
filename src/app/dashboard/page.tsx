@@ -249,7 +249,7 @@ export default function DashboardPage() {
           <h2 className="text-lg font-semibold text-[#ededed] mb-6">Skumulowane wydatki</h2>
           <div className="w-full h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={dailyTrend}>
+              <AreaChart data={dailyTrend} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
                 <defs>
                   <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#6c5ce7" stopOpacity={0.8} />

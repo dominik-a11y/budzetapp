@@ -104,7 +104,7 @@ export default function YearPage() {
         </h2>
         <div className="w-full h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
+            <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#2a2a35" />
               <XAxis dataKey="month" stroke="#666" style={{ fontSize: '12px' }} />
               <YAxis stroke="#666" style={{ fontSize: '12px' }} />

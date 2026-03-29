@@ -1,6 +1,4 @@
-'use server'
-
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import type { BudgetType } from '@/types/budget'
 
 export interface MonthData {
@@ -20,15 +18,15 @@ export interface CategoryYearlyData {
 }
 
 const MONTH_NAMES = [
-  'Stycze\u0144', 'Luty', 'Marzec', 'Kwiecie\u0144', 'Maj', 'Czerwiec',
-  'Lipiec', 'Sierpie\u0144', 'Wrzesie\u0144', 'Pa\u017adziernik', 'Listopad', 'Grudzie\u0144',
+  'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
+  'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień',
 ]
 
 export async function getYearSummary(
   year: number,
   budgetType: BudgetType = 'home'
 ): Promise<{ months: MonthData[]; categoryBreakdown: CategoryYearlyData[] }> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Nie zalogowano')
 

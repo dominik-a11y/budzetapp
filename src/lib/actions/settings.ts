@@ -1,10 +1,8 @@
-'use server'
-
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import type { BudgetSettings, Profile } from '@/types/budget'
 
 export async function getSettings(): Promise<BudgetSettings | null> {
-  const supabase = await createClient()
+  const supabase = createClient()
 
   const { data, error } = await supabase
     .from('budget_settings')
@@ -20,7 +18,7 @@ export async function updateSettings(input: {
   start_day_of_month?: number
   show_business?: boolean
 }): Promise<BudgetSettings> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Nie zalogowano')
 
@@ -36,7 +34,7 @@ export async function updateSettings(input: {
 }
 
 export async function getProfile(): Promise<Profile | null> {
-  const supabase = await createClient()
+  const supabase = createClient()
 
   const { data, error } = await supabase
     .from('profiles')
@@ -51,7 +49,7 @@ export async function updateProfile(input: {
   display_name?: string
   avatar_url?: string | null
 }): Promise<Profile> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Nie zalogowano')
 

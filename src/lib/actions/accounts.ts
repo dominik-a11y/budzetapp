@@ -1,10 +1,8 @@
-'use server'
-
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import type { Account, AccountBalance } from '@/types/budget'
 
 export async function getAccounts(): Promise<Account[]> {
-  const supabase = await createClient()
+  const supabase = createClient()
 
   const { data, error } = await supabase
     .from('accounts')
@@ -20,7 +18,7 @@ export async function createAccount(input: {
   name: string
   account_type: Account['account_type']
 }): Promise<Account> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Nie zalogowano')
 
@@ -52,7 +50,7 @@ export async function updateAccount(
   id: string,
   input: { name?: string; account_type?: Account['account_type']; sort_order?: number }
 ): Promise<Account> {
-  const supabase = await createClient()
+  const supabase = createClient()
 
   const { data, error } = await supabase
     .from('accounts')
@@ -66,7 +64,7 @@ export async function updateAccount(
 }
 
 export async function deleteAccount(id: string): Promise<void> {
-  const supabase = await createClient()
+  const supabase = createClient()
 
   const { error } = await supabase
     .from('accounts')
@@ -82,7 +80,7 @@ export async function getAccountBalances(
   accountId: string,
   year?: number
 ): Promise<AccountBalance[]> {
-  const supabase = await createClient()
+  const supabase = createClient()
 
   let query = supabase
     .from('account_balances')
@@ -106,7 +104,7 @@ export async function upsertAccountBalance(input: {
   month: number
   balance: number
 }): Promise<AccountBalance> {
-  const supabase = await createClient()
+  const supabase = createClient()
 
   // Check if balance exists for this account/year/month
   const { data: existing } = await supabase

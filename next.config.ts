@@ -1,13 +1,11 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
+  output: 'export',
   reactStrictMode: true,
-  headers: async () => [
-    {
-      source: '/sw.js',
-      headers: [{ key: 'Service-Worker-Allowed', value: '/' }],
-    },
-  ],
+  images: {
+    unoptimized: true,
+  },
 }
 
 export default nextConfig

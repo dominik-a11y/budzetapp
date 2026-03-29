@@ -4,3 +4,8 @@ node_modules/
 .env*.local
 *.tsbuildinfo
 next-env.d.ts
+ios/
+android/
+out/
+screenshot.png
+.claude/

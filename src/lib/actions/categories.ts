@@ -1,11 +1,9 @@
-'use server'
-
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import { DEFAULT_CATEGORIES } from '@/lib/categories'
 import type { Category, CategoryWithChildren } from '@/types/budget'
 
 export async function getCategories(): Promise<CategoryWithChildren[]> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Nie zalogowano')
 
@@ -28,7 +26,7 @@ export async function getCategories(): Promise<CategoryWithChildren[]> {
 }
 
 export async function getFlatCategories(): Promise<Category[]> {
-  const supabase = await createClient()
+  const supabase = createClient()
 
   const { data, error } = await supabase
     .from('categories')
@@ -41,7 +39,7 @@ export async function getFlatCategories(): Promise<Category[]> {
 }
 
 export async function initializeDefaultCategories(): Promise<void> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Nie zalogowano')
 
@@ -94,7 +92,7 @@ export async function createCategory(data: {
   type: Category['type']
   parent_id: string | null
 }): Promise<Category> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Nie zalogowano')
 
@@ -133,7 +131,7 @@ export async function updateCategory(
   id: string,
   data: { name?: string; sort_order?: number; icon?: string | null }
 ): Promise<Category> {
-  const supabase = await createClient()
+  const supabase = createClient()
 
   const { data: category, error } = await supabase
     .from('categories')
@@ -147,7 +145,7 @@ export async function updateCategory(
 }
 
 export async function deleteCategory(id: string): Promise<void> {
-  const supabase = await createClient()
+  const supabase = createClient()
 
   // Soft delete — mark as inactive
   const { error } = await supabase

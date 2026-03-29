@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { AuthGuard } from '@/lib/auth-guard'
 
 export const metadata: Metadata = {
   title: 'BudżetApp',
@@ -47,7 +48,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
       </head>
       <body className="bg-[#0a0a0a] text-[#ededed]">
-        {children}
+        <AuthGuard>{children}</AuthGuard>
         <ServiceWorkerRegister />
       </body>
     </html>

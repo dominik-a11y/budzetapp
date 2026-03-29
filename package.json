@@ -5,29 +5,42 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "build:cap": "next build && npx cap sync",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "cap:ios": "npx cap open ios",
+    "cap:android": "npx cap open android",
+    "cap:sync": "npx cap sync"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/browser": "^8.0.3",
+    "@capacitor/camera": "^8.0.2",
+    "@capacitor/cli": "^8.3.0",
+    "@capacitor/core": "^8.3.0",
+    "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/ios": "^8.3.0",
+    "@capacitor/share": "^8.0.1",
+    "@supabase/ssr": "^0.6.0",
+    "@supabase/supabase-js": "^2.49.0",
+    "lucide-react": "^0.469.0",
+    "next": "^15.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "next": "^15.3.0",
-    "@supabase/supabase-js": "^2.49.0",
-    "@supabase/ssr": "^0.6.0",
-    "@anthropic-ai/sdk": "^0.39.0",
     "recharts": "^2.15.0",
-    "lucide-react": "^0.469.0",
-    "zustand": "^5.0.0",
-    "exceljs": "^4.4.0"
+    "xlsx": "^0.18.5",
+    "zustand": "^5.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.0",
+    "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "^15.3.0",
-    "@tailwindcss/postcss": "^4.0.0",
-    "tailwindcss": "^4.0.0"
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.0"
   }
 }

@@ -1,10 +1,8 @@
-'use server'
-
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import type { Document } from '@/types/budget'
 
 export async function getDocuments(): Promise<Document[]> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Nie zalogowano')
 
@@ -18,7 +16,7 @@ export async function getDocuments(): Promise<Document[]> {
 }
 
 export async function getDocument(id: string): Promise<Document | null> {
-  const supabase = await createClient()
+  const supabase = createClient()
 
   const { data, error } = await supabase
     .from('documents')
@@ -36,7 +34,7 @@ export async function createDocument(input: {
   file_size?: number
   thumbnail_path?: string
 }): Promise<Document> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Nie zalogowano')
 
@@ -69,7 +67,7 @@ export async function updateDocumentOCR(
     status?: 'processed' | 'error'
   }
 ): Promise<Document> {
-  const supabase = await createClient()
+  const supabase = createClient()
 
   const { data, error } = await supabase
     .from('documents')
@@ -83,7 +81,7 @@ export async function updateDocumentOCR(
 }
 
 export async function deleteDocument(id: string): Promise<void> {
-  const supabase = await createClient()
+  const supabase = createClient()
 
   const { error } = await supabase
     .from('documents')

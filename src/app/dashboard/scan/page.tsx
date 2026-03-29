@@ -31,6 +31,7 @@ export default function ScanPage() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
 
   // For saving transaction
   const [categories, setCategories] = useState<CategoryWithChildren[]>([])
@@ -215,7 +216,7 @@ export default function ScanPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {!cameraActive ? (
               <button
-                onClick={startCamera}
+                onClick={() => cameraInputRef.current?.click()}
                 className="flex items-center justify-center space-x-2 bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] hover:from-[#5a4bc4] hover:to-[#9189d8] text-white font-semibold py-3 rounded-lg transition"
               >
                 <Camera className="w-5 h-5" />
@@ -238,6 +239,16 @@ export default function ScanPage() {
               <Upload className="w-5 h-5" />
               <span>Wybierz z galerii</span>
             </button>
+
+            {/* Native camera input — opens camera app directly on mobile */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
 
             <input
               ref={fileInputRef}

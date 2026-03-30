@@ -5,7 +5,6 @@ import { Download, LogOut, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getSettings, updateSettings } from '@/lib/actions/settings'
-import { exportToExcel } from '@/lib/export-excel'
 
 export default function SettingsPage() {
   const [currentYear, setCurrentYear] = useState(2026)
@@ -63,7 +62,16 @@ export default function SettingsPage() {
 
   const handleExportToExcel = async () => {
     try {
-      await exportToExcel(currentYear)
+      const response = await fetch(`/api/export?year=${currentYear}`)
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `BudzetApp_${currentYear}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
     } catch {
       setMessage({ type: 'error', text: 'Błąd podczas eksportu' })
     }

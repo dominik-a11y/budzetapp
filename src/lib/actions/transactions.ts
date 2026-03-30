@@ -1,8 +1,10 @@
-import { createClient } from '@/lib/supabase/client'
+'use server'
+
+import { createClient } from '@/lib/supabase/server'
 import type { Transaction } from '@/types/budget'
 
 export async function getTransactions(budgetId: string): Promise<Transaction[]> {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
     .from('transactions')
@@ -18,7 +20,7 @@ export async function getTransactionsForMonth(
   year: number,
   month: number
 ): Promise<Transaction[]> {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   // Find the budget for this month
   const { data: budget } = await supabase
@@ -49,7 +51,7 @@ export async function createTransaction(input: {
   description?: string
   document_id?: string
 }): Promise<Transaction> {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
     .from('transactions')
@@ -78,7 +80,7 @@ export async function updateTransaction(
     document_id?: string | null
   }
 ): Promise<Transaction> {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
     .from('transactions')
@@ -92,7 +94,7 @@ export async function updateTransaction(
 }
 
 export async function deleteTransaction(id: string): Promise<void> {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('transactions')
@@ -105,7 +107,7 @@ export async function deleteTransaction(id: string): Promise<void> {
 // ===== AGGREGATIONS =====
 
 export async function getMonthSummary(budgetId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: transactions, error } = await supabase
     .from('transactions')
@@ -135,7 +137,7 @@ export async function getMonthSummary(budgetId: string) {
 }
 
 export async function getCategoryTotals(budgetId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
     .from('transactions')

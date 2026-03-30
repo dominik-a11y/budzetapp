@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Upload, FileText, Check, X, Loader2, AlertCircle, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { callOCR } from '@/lib/api'
 import { getCategories } from '@/lib/actions/categories'
 import { getOrCreateBudget } from '@/lib/actions/budgets'
 import { createTransaction } from '@/lib/actions/transactions'
@@ -110,7 +109,24 @@ export default function ImportInvoicesPage() {
       setRows(prev => prev.map((r, idx) => idx === i ? { ...r, status: 'processing' } : r))
 
       try {
-        const data = await callOCR(files[i])
+        const formData = new FormData()
+        formData.append('file', files[i])
+
+        const response = await fetch('/api/ocr', {
+          method: 'POST',
+          body: formData,
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          setRows(prev => prev.map((r, idx) => idx === i ? {
+            ...r,
+            status: 'error',
+            error: data.error || 'Błąd OCR',
+          } : r))
+          continue
+        }
 
         // Auto-match category
         let matchedCategoryId = ''

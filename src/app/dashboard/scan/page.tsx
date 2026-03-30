@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Camera, Upload, FileText, Check, X, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { callOCR } from '@/lib/api'
 import { getCategories } from '@/lib/actions/categories'
 import { getOrCreateBudget } from '@/lib/actions/budgets'
 import { createTransaction } from '@/lib/actions/transactions'
@@ -112,7 +111,20 @@ export default function ScanPage() {
     setLoading(true)
     setError(null)
     try {
-      const data = await callOCR(imageFile)
+      const formData = new FormData()
+      formData.append('file', imageFile)
+
+      const response = await fetch('/api/ocr', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Błąd OCR')
+      }
+
       setOcrResult(data)
       setEditedAmount(String(data.total_amount || ''))
       setEditedDate(data.date || '')

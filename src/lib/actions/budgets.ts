@@ -1,4 +1,6 @@
-import { createClient } from '@/lib/supabase/client'
+'use server'
+
+import { createClient } from '@/lib/supabase/server'
 import type { Budget, PlannedAmount, BudgetType } from '@/types/budget'
 
 export async function getOrCreateBudget(
@@ -6,7 +8,7 @@ export async function getOrCreateBudget(
   month: number,
   budgetType: BudgetType = 'home'
 ): Promise<Budget> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Nie zalogowano')
 
@@ -41,7 +43,7 @@ export async function getBudgetsForYear(
   year: number,
   budgetType: BudgetType = 'home'
 ): Promise<Budget[]> {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
     .from('budgets')
@@ -57,7 +59,7 @@ export async function getBudgetsForYear(
 // ===== PLANNED AMOUNTS =====
 
 export async function getPlannedAmounts(budgetId: string): Promise<PlannedAmount[]> {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
     .from('planned_amounts')
@@ -73,7 +75,7 @@ export async function upsertPlannedAmount(input: {
   category_id: string
   amount: number
 }): Promise<PlannedAmount> {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: existing } = await supabase
     .from('planned_amounts')

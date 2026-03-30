@@ -11,11 +11,13 @@ import type { CategoryWithChildren, Category } from '@/types/budget'
 interface OCRResult {
   vendor_name: string
   vendor_nip?: string | null
+  buyer_nip?: string | null
   date: string
   total_amount: number
   suggested_category: string
   items: Array<{ name: string; price: number }>
   confidence: number
+  is_business_expense?: boolean
   document_id?: string | null
 }
 
@@ -177,7 +179,8 @@ export default function ImportInvoicesPage() {
     for (const row of readyRows) {
       try {
         const date = new Date(row.editedDate)
-        const budget = await getOrCreateBudget(date.getFullYear(), date.getMonth() + 1)
+        const budgetType = row.ocr?.is_business_expense ? 'business' : 'home'
+        const budget = await getOrCreateBudget(date.getFullYear(), date.getMonth() + 1, budgetType as 'home' | 'business')
 
         await createTransaction({
           budget_id: budget.id,
@@ -381,7 +384,13 @@ export default function ImportInvoicesPage() {
                       </div>
                     </div>
                     {row.ocr.vendor_nip && (
-                      <p className="text-xs text-[#666] mt-2">NIP: {row.ocr.vendor_nip}</p>
+                      <p className="text-xs text-[#666] mt-2">NIP sprzedawcy: {row.ocr.vendor_nip}</p>
+                    )}
+                    {row.ocr.buyer_nip && (
+                      <p className="text-xs text-[#666] mt-1">NIP nabywcy: {row.ocr.buyer_nip}</p>
+                    )}
+                    {row.ocr.is_business_expense && (
+                      <p className="text-xs text-[#a29bfe] font-medium mt-1">Koszt firmowy</p>
                     )}
                     {row.ocr.confidence && (
                       <p className="text-xs text-[#666] mt-1">Pewność: {(row.ocr.confidence * 100).toFixed(0)}%</p>

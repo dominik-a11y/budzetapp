@@ -98,6 +98,7 @@ export interface Document {
   ocr_total: number | null
   ocr_date: string | null
   ocr_nip: string | null
+  ocr_buyer_nip: string | null
   ocr_category_suggestion: string | null
   status: DocumentStatus
   uploaded_at: string

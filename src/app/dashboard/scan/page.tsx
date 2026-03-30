@@ -11,11 +11,13 @@ import type { CategoryWithChildren, Category } from '@/types/budget'
 interface OCRResult {
   vendor_name: string
   vendor_nip?: string | null
+  buyer_nip?: string | null
   date: string
   total_amount: number
   suggested_category: string
   items: Array<{ name: string; price: number }>
   confidence: number
+  is_business_expense?: boolean
   document_id?: string | null
 }
 
@@ -156,7 +158,8 @@ export default function ScanPage() {
     setError(null)
     try {
       const date = new Date(editedDate)
-      const budget = await getOrCreateBudget(date.getFullYear(), date.getMonth() + 1)
+      const budgetType = ocrResult.is_business_expense ? 'business' : 'home'
+      const budget = await getOrCreateBudget(date.getFullYear(), date.getMonth() + 1, budgetType as 'home' | 'business')
 
       await createTransaction({
         budget_id: budget.id,
@@ -329,7 +332,15 @@ export default function ScanPage() {
             </div>
 
             {ocrResult.vendor_nip && (
-              <p className="text-xs text-[#666]">NIP: {ocrResult.vendor_nip}</p>
+              <p className="text-xs text-[#666]">NIP sprzedawcy: {ocrResult.vendor_nip}</p>
+            )}
+            {ocrResult.buyer_nip && (
+              <p className="text-xs text-[#666]">NIP nabywcy: {ocrResult.buyer_nip}</p>
+            )}
+            {ocrResult.is_business_expense && (
+              <div className="mt-2 px-3 py-1.5 bg-[#6c5ce7]/10 border border-[#6c5ce7]/30 rounded-lg">
+                <p className="text-xs text-[#a29bfe] font-medium">Rozpoznano jako koszt firmowy — trafi do budżetu firmowego</p>
+              </div>
             )}
 
             <div className="grid grid-cols-2 gap-4">

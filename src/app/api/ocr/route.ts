@@ -13,13 +13,15 @@ Zwróć TYLKO poprawny JSON (bez markdown, bez \`\`\`json):
 {
   "vendor_name": "nazwa sprzedawcy/sklepu",
   "vendor_nip": "NIP sprzedawcy jeśli widoczny, lub null",
+  "buyer_nip": "NIP nabywcy/kupującego jeśli widoczny, lub null",
   "date": "YYYY-MM-DD",
   "total_amount": 123.45,
   "items": [
     { "name": "nazwa produktu", "price": 12.99 }
   ],
   "suggested_category": "sugerowana kategoria wydatku (np. Jedzenie, Transport, Mieszkanie, Higiena, Rozrywka, Zdrowie, Ubrania, Inne)",
-  "confidence": 0.95
+  "confidence": 0.95,
+  "is_business_expense": false
 }
 
 Zasady:
@@ -28,6 +30,7 @@ Zasady:
 - Jeśli nie możesz odczytać wartości, ustaw null
 - confidence: 0.0-1.0 (pewność odczytu)
 - suggested_category: najlepsza kategoria na podstawie nazwy sklepu i produktów
+- is_business_expense: true TYLKO gdy na dokumencie widoczny jest NIP nabywcy/kupującego (buyer_nip). Sam NIP sprzedawcy NIE oznacza kosztu firmowego — dokument jest firmowy tylko gdy ma ZARÓWNO NIP sprzedawcy JAK I NIP kupującego.
 `
 
 type ImageMediaType = 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif'
@@ -149,6 +152,7 @@ export async function POST(request: NextRequest) {
         ocr_total: ocrResult.total_amount || null,
         ocr_date: ocrResult.date || null,
         ocr_nip: ocrResult.vendor_nip || null,
+        ocr_buyer_nip: ocrResult.buyer_nip || null,
         ocr_category_suggestion: ocrResult.suggested_category || null,
         status: 'processed',
       })

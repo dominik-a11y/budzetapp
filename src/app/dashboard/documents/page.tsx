@@ -196,7 +196,10 @@ function DocumentCard({
         <p className="text-xs text-[#666] truncate">{doc.file_type} &bull; {doc.file_path.split('/').pop()}</p>
 
         {doc.ocr_nip && (
-          <p className="text-xs text-[#666]">NIP: {doc.ocr_nip}</p>
+          <p className="text-xs text-[#666]">NIP sprzedawcy: {doc.ocr_nip}</p>
+        )}
+        {doc.ocr_buyer_nip && (
+          <p className="text-xs text-[#a29bfe] font-medium">Firmowy — NIP nabywcy: {doc.ocr_buyer_nip}</p>
         )}
 
         <div className="flex items-center justify-between pt-2 border-t border-[#2a2a35]">

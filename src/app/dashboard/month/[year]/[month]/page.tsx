@@ -575,11 +575,16 @@ export default function MonthPage() {
                   />
                 </div>
               </div>
+              {(!txCategoryId || !txAmount || !txDate) && (
+                <p className="text-xs text-[#e17055]">
+                  {!txCategoryId ? 'Wybierz kategorię. ' : ''}{!txAmount ? 'Wpisz kwotę. ' : ''}{!txDate ? 'Ustaw datę.' : ''}
+                </p>
+              )}
               <div className="flex items-center space-x-2">
                 <button
                   onClick={handleAddTransaction}
                   disabled={saving || !txCategoryId || !txAmount || !txDate}
-                  className="px-4 py-2 bg-[#6c5ce7] text-white rounded-lg text-sm font-medium disabled:opacity-50 transition"
+                  className="px-4 py-2 bg-[#6c5ce7] text-white rounded-lg text-sm font-medium disabled:opacity-30 transition"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Zapisz'}
                 </button>

@@ -708,7 +708,7 @@ export default function MonthPage() {
                           {new Date(tx.date).toLocaleDateString('pl-PL')}
                         </p>
                       </div>
-                      <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition">
+                      <div className="flex items-center space-x-1">
                         <button
                           onClick={() => startEditTx(tx)}
                           className="p-1.5 hover:bg-[#2a2a35] rounded-lg"
